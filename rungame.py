@@ -27,6 +27,7 @@ from agents import *
 from moba2 import *
 from MyHero import *
 from clonenav import *
+from Castle import *
 
 ############################
 ### How to use this file
@@ -62,5 +63,10 @@ world.debugging = True
 nav = AStarNavigator()
 nav.agent = agent
 nav.setWorld(world)
+
+c1 = Castle(BASE, (75,360),world,1)
+c2 = Castle(BASE, (1280-75,360),world,2)
+world.addBase(c1)
+world.addBase(c2)
 
 world.run()
