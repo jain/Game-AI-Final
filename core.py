@@ -1005,6 +1005,19 @@ class GameWorld():
 			self.agent.shoot()
 		elif key == 100: #d
 			print "distance traveled", self.agent.distanceTraveled
+		elif key == 101:  # d
+			loc = self.agent.getLocation()
+			points = [(0, 0), (self.dimensions[0], 0), (self.dimensions[0], self.dimensions[1]), (0, self.dimensions[1])]
+			lines = [((0, 0), (self.dimensions[0], 0)), ((self.dimensions[0], 0), (self.dimensions[0], self.dimensions[1])), ((self.dimensions[0], self.dimensions[1]), (0, self.dimensions[1])), ((0, self.dimensions[1]), (0,0))]
+			poly = [(loc[0]-10, loc[1]),(loc[0]+10, loc[1]),(loc[0]+10, loc[1]+10),(loc[0], loc[1]+10)]
+			o = ManualObstacle(poly, (0,0,0), 4, None)
+			points = points + o.getPoints()
+			lines = lines + o.getLines()
+			self.obstacles.append(o)
+			self.points = points
+			self.lines = lines
+			#self.obstacles.append([(loc[0]-10, loc[1]),(loc[0]+10, loc[1]),(loc[0]+10, loc[1]+10),(loc[0], loc[1]+10)])
+
 
 	def worldCollisionTest(self):
 		collisions = []
