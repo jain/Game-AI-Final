@@ -1007,16 +1007,19 @@ class GameWorld():
 			print "distance traveled", self.agent.distanceTraveled
 		elif key == 101:  # d
 			loc = self.agent.getLocation()
-			points = [(0, 0), (self.dimensions[0], 0), (self.dimensions[0], self.dimensions[1]), (0, self.dimensions[1])]
-			lines = [((0, 0), (self.dimensions[0], 0)), ((self.dimensions[0], 0), (self.dimensions[0], self.dimensions[1])), ((self.dimensions[0], self.dimensions[1]), (0, self.dimensions[1])), ((0, self.dimensions[1]), (0,0))]
-			poly = [(loc[0]-10, loc[1]),(loc[0]+10, loc[1]),(loc[0]+10, loc[1]+10),(loc[0], loc[1]+10)]
-			o = ManualObstacle(poly, (0,0,0), 4, None)
-			points = points + o.getPoints()
-			lines = lines + o.getLines()
+			offs = 20
+			poly = [(loc[0]-offs, loc[1]-offs),(loc[0]+offs, loc[1]-offs),(loc[0]+offs, loc[1]+offs),(loc[0]-offs, loc[1]+offs)]
+			o = ManualObstacle(poly, (0, 0, 0), 4, None)
+			lins = o.getLines()
+			for lin in self.agent.world.getLines():
+				for lin2 in lins:
+					if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
+						print 'U CANT BUILD THERE'
+						return
+
+			self.points = self.points + o.getPoints()
+			self.lines = self.lines + o.getLines()
 			self.obstacles.append(o)
-			self.points = points
-			self.lines = lines
-			#self.obstacles.append([(loc[0]-10, loc[1]),(loc[0]+10, loc[1]),(loc[0]+10, loc[1]+10),(loc[0], loc[1]+10)])
 
 
 	def worldCollisionTest(self):
