@@ -26,7 +26,6 @@ from astarnavigator import *
 from agents import *
 from moba2 import *
 from MyHero import *
-from WanderingMinion import *
 from clonenav import *
 
 ############################
