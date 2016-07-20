@@ -74,7 +74,7 @@ class Idle(State):
         myTeam = self.agent.getTeam()
         towers = self.agent.world.getEnemyTowers(myTeam)
         myBase = self.agent.world.getBaseForTeam(myTeam)
-        print "NO OF MINIONS: ", myBase.numSpawned
+        #print "NO OF MINIONS: ", myBase.numSpawned
         if towers:
             nearTower, nearToweDist = getNearest(self.agent, towers)
             self.agent.changeState(Move, nearTower)

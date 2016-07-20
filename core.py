@@ -1087,7 +1087,7 @@ class GameWorld():
 			o = ManualObstacle(poly, (0, 0, 0), 4, None)
 			lins = o.getLines()
 			for lin in self.agent.world.getLines():
-				for lin2 in lins:
+				for lin2 in linsf:
 					if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
 						print 'U CANT BUILD THERE'
 						return
