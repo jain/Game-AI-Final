@@ -21,7 +21,7 @@ from pygame.locals import *
 
 from constants import *
 from utils import *
-
+#
 
 ###########################
 
@@ -1006,9 +1006,35 @@ class GameWorld():
 		elif key == 100: #d
 			print "distance traveled", self.agent.distanceTraveled
 		elif key == 101:  # d
+			#from rungame import core_CreateBuilding1
+			from Castle import Building
+			from MyMinion import MyMinion
+			from moba2 import SmallBullet
+			from astarnavigator import AStarNavigator
+			class MyHumanMinion(MyMinion):
+				def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
+							 hitpoints=HITPOINTS,
+							 firerate=FIRERATE, bulletclass=SmallBullet):
+					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+									  bulletclass)
+
+			class MyAlienMinion(MyMinion):
+				def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
+							 hitpoints=HITPOINTS,
+							 firerate=FIRERATE, bulletclass=SmallBullet):
+					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+									  bulletclass)
 			loc = self.agent.getLocation()
 			offs = 20
 			poly = [(loc[0]-offs, loc[1]-offs),(loc[0]+offs, loc[1]-offs),(loc[0]+offs, loc[1]+offs),(loc[0]-offs, loc[1]+offs)]
+			#core_CreateBuilding1(loc)
+			c3 = Building(FACTORY, loc, self.agent.world, 3, MyHumanMinion)
+			nav = AStarNavigator()
+			nav.agent = self.agent
+			nav.setWorld(self.agent.world)
+			c3.setNavigator(nav)
+			self.addBase(c3)
+			'''
 			o = ManualObstacle(poly, (0, 0, 0), 4, None)
 			lins = o.getLines()
 			for lin in self.agent.world.getLines():
@@ -1020,7 +1046,7 @@ class GameWorld():
 			self.points = self.points + o.getPoints()
 			self.lines = self.lines + o.getLines()
 			self.obstacles.append(o)
-
+			'''
 
 	def worldCollisionTest(self):
 		collisions = []

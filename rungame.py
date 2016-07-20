@@ -28,7 +28,7 @@ from moba2 import *
 from MyHero import *
 from clonenav import *
 from Castle import *
-
+from MyMinion import *
 ############################
 ### How to use this file
 ###
@@ -38,6 +38,8 @@ from Castle import *
 
 ############################
 ### SET UP WORLD
+
+
 
 dims = (1280, 720)
 
@@ -51,6 +53,24 @@ obstacles = obstacles + mirror
 
 ########################
 
+def core_CreateBuilding1(loc):
+	c3 = Castle(BASE, (75, 360), world, 3)
+	c3.setNavigator(nav)
+	world.addBase(c3)
+
+
+class MyHumanMinion(MyMinion):
+	def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
+				 firerate=FIRERATE, bulletclass=SmallBullet):
+		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
+
+
+class MyAlienMinion(MyMinion):
+	def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
+				 firerate=FIRERATE, bulletclass=SmallBullet):
+		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
+
+########################
 world = MOBAWorld(SEED, dims, dims, 0, 60)
 agent = GhostAgent(ELITE, (600, 500), 0, SPEED, world)
 #agent = Hero((600, 500), 0, world, ELITE)
@@ -64,9 +84,12 @@ nav = AStarNavigator()
 nav.agent = agent
 nav.setWorld(world)
 
-c1 = Castle(BASE, (75,360),world,1)
-c2 = Castle(BASE, (1280-75,360),world,2)
+#c1 = Castle(BASE, (75,360),world,1, MyHumanMinion)
+#c2 = Castle(BASE, (1280-75,360),world,2, MyAlienMinion)
+c1 = CastleBase(BASE, (75,360),world,1)
+c2 = CastleBase(BASE, (1280-75,360),world,2)
 world.addBase(c1)
 world.addBase(c2)
 
 world.run()
+

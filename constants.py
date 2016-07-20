@@ -48,7 +48,7 @@ CRYSTAL = "sprites/crystal.gif"
 TREE = "sprites/tree.gif"
 MINE = "sprites/mine.gif"
 TOWER = "sprites/tower.gif"
-
+FACTORY = "sprites/factory.gif"
 
 SMALLBULLETSPEED = (20, 20)
 SMALLBULLETDAMAGE = 1
