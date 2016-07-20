@@ -39,14 +39,16 @@ from MyMinion import *
 ############################
 ### SET UP WORLD
 
+x = 1400
+y = 850
 
 
-dims = (1400, 850)
+dims = (x, y)
 
-obstacles = [[(0, 0), (0, 220), (80, 220), (220, 80), (220, 0)],
-			 [(0, 720), (0, 500), (80, 500), (220, 640), (220, 720)]]
+'''obstacles = [[(0, 0), (0, 220), (80, 220), (220, 80), (220, 0)],
+			 [(0, y), (0, 500), (80, 500), (220, 640), (220, 720)]]'''
 
-
+obstacles = []
 mirror = map(lambda poly: map(lambda point: (dims[0]-point[0], dims[1]-point[1]), poly), obstacles)
 
 obstacles = obstacles + mirror
@@ -86,8 +88,8 @@ nav.setWorld(world)
 
 #c1 = Castle(BASE, (75,360),world,1, MyHumanMinion)
 #c2 = Castle(BASE, (1280-75,360),world,2, MyAlienMinion)
-c1 = CastleBase(BASE, (75,360),world,1)
-c2 = CastleBase(BASE, (1280-75,360),world,2)
+c1 = CastleBase(BASE, (75,y/2),world,1)
+c2 = CastleBase(BASE, (x-75,y/2),world,2)
 world.addBase(c1)
 world.addBase(c2)
 
