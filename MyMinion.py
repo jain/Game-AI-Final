@@ -70,7 +70,7 @@ class Idle(State):
         print "world NPCs: ", self.agent.world.getNPCs()
         #print "range: ",self.agent.bulletclass.range
         '''
-        print "IDLE STATE"
+        #print "IDLE STATE"
         myTeam = self.agent.getTeam()
         towers = self.agent.world.getEnemyTowers(myTeam)
         myBase = self.agent.world.getBaseForTeam(myTeam)
@@ -126,7 +126,7 @@ class Move(State):
 
     def execute(self, delta=0):
 
-        print "MOVE STATE"
+        #print "MOVE STATE"
         tower = 0
         if distance(self.agent.getLocation(), self.target.getLocation()) <= SMALLBULLETRANGE:
             self.agent.changeState(AttackTowerBase, self.target)
@@ -177,7 +177,7 @@ class AttackMinionHero(State):
     # self.agent.navigateTo(self.target.getLocation())
 
     def execute(self, delta=0):
-        print "ATTACK MINION STATE"
+        #print "ATTACK MINION STATE"
         self.agent.turnToFace(self.target.getLocation())
         self.agent.shoot()
         if delta % 4 == 0:
@@ -199,7 +199,7 @@ class AttackTowerBase(State):
         self.agent.stopMoving()
 
     def execute(self, delta=0):
-        print "ATTACK BASE TOWER STATE"
+        #print "ATTACK BASE TOWER STATE"
         self.agent.turnToFace(self.target.getLocation())
         self.agent.shoot()
         if delta % 4 == 0:

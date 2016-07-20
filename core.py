@@ -1070,13 +1070,21 @@ class GameWorld():
 			if cost > self.my_gold:
 				print 'NOT ENOUGH GOLD'
 				return
-			self.my_gold -= cost
+
 			lins = c3.getLines()
-			for lin in self.getLines():
-				for lin2 in lins:
-					if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
-						print 'U CANT BUILD THERE'
-						return
+			bases = self.getBases()
+			linlist = []
+			for baseitem in bases:
+				linlist.append(baseitem.getLines())
+			#if lins in linlist:
+			#	linlist.remove(lins)
+			for lin1 in linlist:
+				for lin in lin1:
+					for lin2 in lins:
+						if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
+							print 'U CANT BUILD THERE'
+							return
+			self.my_gold -= cost
 			#self.lines += lins
 			nav = AStarNavigator()
 			nav.agent = self.agent

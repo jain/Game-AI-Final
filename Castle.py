@@ -131,6 +131,13 @@ class CastleBase(Mover):
 		self.canfire = True
 		self.bulletclass = bulletclass
 
+	def getLines(self):
+		p1 = self.rect.topleft
+		p2 = self.rect.topright
+		p3 = self.rect.bottomright
+		p4 = self.rect.bottomleft
+		return ((p1, p2), (p2, p3), (p3, p4), (p4, p1))
+
 	def getTeam(self):
 		return self.team
 
