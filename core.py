@@ -1029,7 +1029,7 @@ class GameWorld():
 			self.agent.shoot()
 		elif key == 100: #d
 			print "distance traveled", self.agent.distanceTraveled
-		elif key == 101:  # e
+		elif key >= 101 and key <= 103:  # e-g
 			#from rungame import core_CreateBuilding1
 			from Castle import Building
 			from MyMinion import MyMinion
@@ -1048,12 +1048,25 @@ class GameWorld():
 							 firerate=FIRERATE, bulletclass=SmallBullet):
 					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
 									  bulletclass)
+			class MyEliteMinion(MyMinion):
+				def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
+							 hitpoints=HITPOINTS,
+							 firerate=FIRERATE, bulletclass=SmallBullet):
+					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+									  bulletclass)
 			loc = self.agent.getLocation()
 			offs = 20
 			poly = [(loc[0]-offs, loc[1]-offs),(loc[0]+offs, loc[1]-offs),(loc[0]+offs, loc[1]+offs),(loc[0]-offs, loc[1]+offs)]
 			#core_CreateBuilding1(loc)
-			cost = 300
-			c3 = Building(FACTORY, loc, self.agent.world, 3, MyHumanMinion)
+			if key==101:
+				cost = 100
+				c3 = Building(FACTORY, loc, self.agent.world, 3, MyHumanMinion)
+			elif key==102:
+				cost = 200
+				c3 = Building('sprites/factory2.png', loc, self.agent.world, 3, MyAlienMinion)
+			elif key==103:
+				cost = 300
+				c3 = Building('sprites/factory3.png', loc, self.agent.world, 3, MyEliteMinion)
 			if cost > self.my_gold:
 				print 'NOT ENOUGH GOLD'
 				return
