@@ -114,7 +114,7 @@ class MOBABullet(Bullet):
 class BigBullet(MOBABullet):
 	
 	def __init__(self, position, orientation, world):
-		MOBABullet.__init__(self, position, orientation, world, BIGBULLET, BIGBULLETSPEED, BIGBULLETDAMAGE, BIGBULLETRANGE)
+		MOBABullet.__init__(self, position, orientation, world, "sprites/bullet4.png", BIGBULLETSPEED, BIGBULLETDAMAGE, BIGBULLETRANGE)
 
 ###########################
 ### SmallBullet
@@ -139,7 +139,7 @@ class TowerBullet(MOBABullet):
 class BaseBullet(MOBABullet):
 	
 	def __init__(self, position, orientation, world):
-		MOBABullet.__init__(self, position, orientation, world, BASEBULLET, BASEBULLETSPEED, BASEBULLETDAMAGE, BASEBULLETRANGE)
+		MOBABullet.__init__(self, position, orientation, world, "sprites/bullet3.png", BASEBULLETSPEED, BASEBULLETDAMAGE, BASEBULLETRANGE)
 
 
 

@@ -33,6 +33,7 @@ class MyMinion(Minion):
         self.world = world
         self.position = position
         self.bullet = bulletclass
+        self.bullet_range = bulletclass((0,0),0,None).range
 
     ### Add your states to self.states (but don't remove Idle)
     ### YOUR CODE GOES BELOW HERE ###
@@ -128,7 +129,7 @@ class Move(State):
 
         #print "MOVE STATE"
         tower = 0
-        if distance(self.agent.getLocation(), self.target.getLocation()) <= SMALLBULLETRANGE:
+        if distance(self.agent.getLocation(), self.target.getLocation()) <= self.agent.bullet_range:
             self.agent.changeState(AttackTowerBase, self.target)
             tower = tower + 1
 
@@ -138,7 +139,7 @@ class Move(State):
         minions = self.agent.getVisibleType(Minion)
         for m in minions:
             if m.getTeam() != myTeam:
-                if distance(self.agent.getLocation(), m.getLocation()) <= SMALLBULLETRANGE and tower == 0 and distance(
+                if distance(self.agent.getLocation(), m.getLocation()) <= self.agent.bullet_range and tower == 0 and distance(
                         self.agent.getLocation(), self.target.getLocation()) > TOWERBULLETRANGE:
                     self.agent.changeState(AttackMinionHero, m)
                     count = count + 1
@@ -182,7 +183,7 @@ class AttackMinionHero(State):
         self.agent.shoot()
         if delta % 4 == 0:
             if self.target.getHitpoints() > 0 and distance(self.agent.getLocation(),
-                                                           self.target.getLocation()) <= SMALLBULLETRANGE:
+                                                           self.target.getLocation()) <= self.agent.bullet_range:
                 self.agent.turnToFace(self.target.getLocation())
                 self.agent.shoot()
             else:
@@ -204,7 +205,7 @@ class AttackTowerBase(State):
         self.agent.shoot()
         if delta % 4 == 0:
             if self.target.getHitpoints() > 0 and distance(self.agent.getLocation(),
-                                                           self.target.getLocation()) <= SMALLBULLETRANGE:
+                                                           self.target.getLocation()) <= self.agent.bullet_range:
                 self.agent.turnToFace(self.target.getLocation())
                 self.agent.shoot()
             else:
