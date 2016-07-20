@@ -125,6 +125,7 @@ class CastleBase(Mover):
 		Mover.__init__(self, image, position, 0, 0, world)
 		self.team = team
 		self.hitpoints = hitpoints
+		self.maxHitpoints = hitpoints
 		self.nav = None
 		self.firerate = firerate
 		self.firetimer = 0
@@ -200,6 +201,7 @@ class Building(Mover):
 		Mover.__init__(self, image, position, 0, 0, world)
 		self.team = team
 		self.hitpoints = hitpoints
+		self.maxHitpoints = hitpoints
 		self.buildTimer = buildrate
 		self.buildRate = buildrate
 		self.nav = None
@@ -209,6 +211,13 @@ class Building(Mover):
 		self.canfire = True
 		self.bulletclass = bulletclass
 		self.numSpawned = 0
+
+	def getLines(self):
+		p1 = self.rect.topleft
+		p2 = self.rect.topright
+		p3 = self.rect.bottomright
+		p4 = self.rect.bottomleft
+		return ((p1,p2),(p2,p3),(p3,p4),(p4,p1))
 
 
 	def setNavigator(self, nav):

@@ -849,6 +849,9 @@ class GameWorld():
 		self.camera = [0, 0]
 		# unobstructed places
 		self.destinations = {}
+		self.my_gold = 1000
+		self.ai_gold = 1000
+		self.font = pygame.font.Font(None,50)
 	
 	def getPoints(self):
 		return self.points
@@ -981,8 +984,29 @@ class GameWorld():
 		self.sprites.draw(self.background)
 		for o in self.obstacles:
 			o.draw(self.background)
+		for m in self.movers:
+			if hasattr(m,'maxHitpoints'):
+				self.drawHealthBar(m)
+		self.screen.blit(self.font.render('Gold: '+str(self.my_gold),0,(185,185,0)),(0,0))
+		self.screen.blit(self.font.render('Gold: '+str(self.ai_gold),0,(185,185,0)),(self.dimensions[0]-200,0))
 		#pygame.display.flip()
 		
+	def drawHealthBar(self,m):
+		x1 = m.rect.topleft[0]
+		x2 = m.rect.topright[0]
+		y1 = m.rect.topleft[1] - 20
+		y2 = m.rect.topleft[1] - 10
+		pygame.draw.line(self.background, (0, 0, 0), (x1,y1), (x2,y1), 1)
+		pygame.draw.line(self.background, (0, 0, 0), (x2,y1), (x2,y2), 1)
+		pygame.draw.line(self.background, (0, 0, 0), (x2,y2), (x1,y2), 1)
+		pygame.draw.line(self.background, (0, 0, 0), (x1,y2), (x1,y1), 1)
+		hp_ratio = 1.0 * m.hitpoints / m.maxHitpoints
+		w = hp_ratio * (x2 - x1 - 2)
+		if m.team==1:
+			pygame.draw.rect(self.background, (0,255,0),pygame.Rect(x1+1,y1+1,w,8))
+		else:
+			pygame.draw.rect(self.background, (255,0,0),pygame.Rect(x1+1,y1+1,w,8))
+
 	def handleEvents(self): 
 		events = pygame.event.get()
 		for event in events:
@@ -1005,7 +1029,7 @@ class GameWorld():
 			self.agent.shoot()
 		elif key == 100: #d
 			print "distance traveled", self.agent.distanceTraveled
-		elif key == 101:  # d
+		elif key == 101:  # e
 			#from rungame import core_CreateBuilding1
 			from Castle import Building
 			from MyMinion import MyMinion
@@ -1028,7 +1052,19 @@ class GameWorld():
 			offs = 20
 			poly = [(loc[0]-offs, loc[1]-offs),(loc[0]+offs, loc[1]-offs),(loc[0]+offs, loc[1]+offs),(loc[0]-offs, loc[1]+offs)]
 			#core_CreateBuilding1(loc)
+			cost = 300
 			c3 = Building(FACTORY, loc, self.agent.world, 3, MyHumanMinion)
+			if cost > self.my_gold:
+				print 'NOT ENOUGH GOLD'
+				return
+			self.my_gold -= cost
+			lins = c3.getLines()
+			for lin in self.getLines():
+				for lin2 in lins:
+					if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
+						print 'U CANT BUILD THERE'
+						return
+			#self.lines += lins
 			nav = AStarNavigator()
 			nav.agent = self.agent
 			nav.setWorld(self.agent.world)
@@ -1079,6 +1115,8 @@ class GameWorld():
 	def update(self, delta):
 		self.clock = self.clock + delta
 		self.worldCollisionTest()
+		self.my_gold += 1
+		self.ai_gold += 1
 		return None
 		
 	def collision(self, thing):
