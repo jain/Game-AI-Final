@@ -46,10 +46,9 @@ class MOBABullet(Bullet):
 	def collision(self, thing):
 		Bullet.collision(self, thing)
 		if isinstance(thing, Building) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
-			print "is instance"
 			self.hit(thing)
-		'''elif isinstance(thing, Tower) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
-			self.hit(thing)'''
+		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+			self.hit(thing)
 
 	def hit(self, thing):
 		ret = Bullet.hit(self, thing)
@@ -58,9 +57,9 @@ class MOBABullet(Bullet):
 		elif isinstance(thing, Building) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			thing.damage(self.damage)
 			return True
-			'''elif isinstance(thing, Tower) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			thing.damage(self.damage)
-			return True'''
+			return True
 		else:
 			return False
 
@@ -166,14 +165,14 @@ class CastleBase(Mover):
 				self.shoot()
 
 	def damage(self, amount):
-		print "damage taken"
+#		print "damage taken"
 		self.hitpoints = self.hitpoints - amount
 		if self.hitpoints <= 0:
 			self.die()
 
 	def die(self):
 		Mover.die(self)
-		print "castle dies", self
+#		print "castle dies", self
 		self.world.deleteBase(self)
 
 	def shoot(self):

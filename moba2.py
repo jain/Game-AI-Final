@@ -25,6 +25,7 @@ from core import *
 from agents import *
 from astarnavigator import *
 from clonenav import *
+from Castle import *
 
 
 ### Modifications:
@@ -80,6 +81,10 @@ class MOBABullet(Bullet):
 			self.hit(thing)
 		elif isinstance(thing, Tower) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			self.hit(thing)
+		elif isinstance(thing, Building) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+			self.hit(thing)
+		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+			self.hit(thing)
 
 	def hit(self, thing):
 		ret = Bullet.hit(self, thing)
@@ -95,6 +100,12 @@ class MOBABullet(Bullet):
 		elif isinstance(thing, Tower) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			thing.damage(self.damage)
 			ret = True
+		elif isinstance(thing, Building) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+			thing.damage(self.damage)
+			return True
+		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+			thing.damage(self.damage)
+			return True
 		return ret
 
 ######################

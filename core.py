@@ -1033,7 +1033,7 @@ class GameWorld():
 			#from rungame import core_CreateBuilding1
 			from Castle import Building
 			from MyMinion import MyMinion
-			from moba2 import SmallBullet
+			from moba2 import SmallBullet,BigBullet,BaseBullet
 			from astarnavigator import AStarNavigator
 			class MyHumanMinion(MyMinion):
 				def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
@@ -1044,14 +1044,14 @@ class GameWorld():
 
 			class MyAlienMinion(MyMinion):
 				def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
-							 hitpoints=HITPOINTS,
-							 firerate=FIRERATE, bulletclass=SmallBullet):
+							 hitpoints=HITPOINTS*2,
+							 firerate=FIRERATE, bulletclass=BaseBullet):
 					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
 									  bulletclass)
 			class MyEliteMinion(MyMinion):
 				def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
-							 hitpoints=HITPOINTS,
-							 firerate=FIRERATE, bulletclass=SmallBullet):
+							 hitpoints=HITPOINTS*3,
+							 firerate=FIRERATE, bulletclass=BigBullet):
 					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
 									  bulletclass)
 			loc = self.agent.getLocation()
@@ -1060,13 +1060,13 @@ class GameWorld():
 			#core_CreateBuilding1(loc)
 			if key==101:
 				cost = 100
-				c3 = Building(FACTORY, loc, self.agent.world, 3, MyHumanMinion)
+				c3 = Building(FACTORY, loc, self.agent.world, 1, MyHumanMinion)
 			elif key==102:
 				cost = 200
-				c3 = Building('sprites/factory2.png', loc, self.agent.world, 3, MyAlienMinion)
+				c3 = Building('sprites/factory2.png', loc, self.agent.world, 1, MyAlienMinion)
 			elif key==103:
 				cost = 300
-				c3 = Building('sprites/factory3.png', loc, self.agent.world, 3, MyEliteMinion)
+				c3 = Building('sprites/factory3.png', loc, self.agent.world, 1, MyEliteMinion)
 			if cost > self.my_gold:
 				print 'NOT ENOUGH GOLD'
 				return
