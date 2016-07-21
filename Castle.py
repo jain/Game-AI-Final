@@ -329,4 +329,52 @@ class Building(Mover):
 	def getHitpoints(self):
 		return self.hitpoints
 
+from MyMinion import MyMinion
+
+
+class BigBullet(MOBABullet):
+	def __init__(self, position, orientation, world):
+		MOBABullet.__init__(self, position, orientation, world, "sprites/bullet4.png", BIGBULLETSPEED, BIGBULLETDAMAGE,
+							BIGBULLETRANGE)
+
+
+###########################
+### SmallBullet
+
+class SmallBullet(MOBABullet):
+	def __init__(self, position, orientation, world):
+		MOBABullet.__init__(self, position, orientation, world, SMALLBULLET, SMALLBULLETSPEED, SMALLBULLETDAMAGE,
+							BIGBULLETRANGE)
+
+
+###########################
+### BaseBullet
+
+class BaseBullet(MOBABullet):
+	def __init__(self, position, orientation, world):
+		MOBABullet.__init__(self, position, orientation, world, "sprites/bullet3.png", BASEBULLETSPEED,
+							BASEBULLETDAMAGE, BASEBULLETRANGE)
+
+class MyHumanMinion(MyMinion):
+	def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
+				 hitpoints=HITPOINTS,
+				 firerate=FIRERATE, bulletclass=SmallBullet):
+		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+						  bulletclass)
+
+class MyAlienMinion(MyMinion):
+	def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
+				 hitpoints=HITPOINTS * 2,
+				 firerate=FIRERATE, bulletclass=BaseBullet):
+		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+						  bulletclass)
+
+class MyEliteMinion(MyMinion):
+	def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
+				 hitpoints=HITPOINTS * 3,
+				 firerate=FIRERATE, bulletclass=BigBullet):
+		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+						  bulletclass)
+
+
 

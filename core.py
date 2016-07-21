@@ -23,6 +23,8 @@ from constants import *
 from utils import *
 #
 
+
+
 ###########################
 
 corerandom = random.Random()
@@ -793,6 +795,7 @@ class ManualObstacle(Obstacle):
 
 class GameWorld():
 
+
 	### screen: the screen
 	### background: the background surface
 	### agent: the player agent
@@ -810,6 +813,7 @@ class GameWorld():
 
 	def __init__(self, seed, worlddimensions, screendimensions):
 		#initialize random seed
+		self.count = 0
 		self.time = time.time()
 		corerandom.seed(seed or self.time)
 		random.seed(self.time)
@@ -964,7 +968,8 @@ class GameWorld():
 			delta = clock.get_rawtime()
 			self.handleEvents()
 			self.update(delta)
-			self.sprites.update(delta) 
+			self.sprites.update(delta)
+			self.genEnemy()
 			#print "obstacles"
 			#for o in self.obstacles:
 			#	print o.pos
@@ -972,6 +977,37 @@ class GameWorld():
 			#	o.pos[1] = o.pos[1] + 1.0
 			self.drawWorld()
 			pygame.display.flip()
+	def genEnemy(self):
+		if (self.count == 1000):
+			from Castle import Building, MyHumanMinion, MyAlienMinion, MyEliteMinion
+
+			from astarnavigator import AStarNavigator
+			loc = [random.randint(700,1300), random.randint(400,800)]
+			cost = 1000
+			c3 = Building(FACTORY, loc, self.agent.world, 2, MyHumanMinion)
+			lins = c3.getLines()
+			bases = self.getBases()
+			linlist = []
+			for baseitem in bases:
+				linlist.append(baseitem.getLines())
+			# if lins in linlist:
+			#	linlist.remove(lins)
+			for lin1 in linlist:
+				for lin in lin1:
+					for lin2 in lins:
+						if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
+							print 'U CANT BUILD THERE'
+							return
+			self.my_gold -= cost
+			# self.lines += lins
+			nav = AStarNavigator()
+			nav.agent = self.agent
+			nav.setWorld(self.agent.world)
+			c3.setNavigator(nav)
+			self.ai_gold -= cost
+			self.addBase(c3)
+			self.count = 0
+		self.count +=1
 			
 	def drawWorld(self):
 		#self.screen.blit(self.background, (0, 0))
@@ -1031,41 +1067,23 @@ class GameWorld():
 			print "distance traveled", self.agent.distanceTraveled
 		elif key >= 101 and key <= 103:  # e-g
 			#from rungame import core_CreateBuilding1
-			from Castle import Building
-			from MyMinion import MyMinion
-			from moba2 import SmallBullet,BigBullet,BaseBullet
-			from astarnavigator import AStarNavigator
-			class MyHumanMinion(MyMinion):
-				def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
-							 hitpoints=HITPOINTS,
-							 firerate=FIRERATE, bulletclass=SmallBullet):
-					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-									  bulletclass)
 
-			class MyAlienMinion(MyMinion):
-				def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
-							 hitpoints=HITPOINTS*2,
-							 firerate=FIRERATE, bulletclass=BaseBullet):
-					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-									  bulletclass)
-			class MyEliteMinion(MyMinion):
-				def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
-							 hitpoints=HITPOINTS*3,
-							 firerate=FIRERATE, bulletclass=BigBullet):
-					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-									  bulletclass)
 			loc = self.agent.getLocation()
 			offs = 20
 			poly = [(loc[0]-offs, loc[1]-offs),(loc[0]+offs, loc[1]-offs),(loc[0]+offs, loc[1]+offs),(loc[0]-offs, loc[1]+offs)]
 			#core_CreateBuilding1(loc)
+			from Castle import Building, MyHumanMinion, MyAlienMinion, MyEliteMinion
+
+			from astarnavigator import AStarNavigator
+
 			if key==101:
-				cost = 100
+				cost = 1000
 				c3 = Building(FACTORY, loc, self.agent.world, 1, MyHumanMinion)
 			elif key==102:
-				cost = 200
+				cost = 2000
 				c3 = Building('sprites/factory2.png', loc, self.agent.world, 1, MyAlienMinion)
 			elif key==103:
-				cost = 300
+				cost = 3000
 				c3 = Building('sprites/factory3.png', loc, self.agent.world, 1, MyEliteMinion)
 			if cost > self.my_gold:
 				print 'NOT ENOUGH GOLD'
