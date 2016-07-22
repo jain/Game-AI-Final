@@ -48,7 +48,9 @@ CRYSTAL = "sprites/crystal.gif"
 TREE = "sprites/tree.gif"
 MINE = "sprites/mine.gif"
 TOWER = "sprites/tower.gif"
-FACTORY = "sprites/factory.gif"
+FACTORY1 = "sprites/factory.gif"
+FACTORY2 = "sprites/factory2.png"
+FACTORY3 = "sprites/factory3.png"
 
 SMALLBULLETSPEED = (20, 20)
 SMALLBULLETDAMAGE = 1
@@ -56,6 +58,7 @@ BIGBULLETSPEED = (20, 20)
 BIGBULLETDAMAGE = 5
 FIRERATE = 10
 DODGERATE = 10
+BUILDRADIUS = 120
 
 INFINITY = float("inf")
 EPSILON = 0.000001

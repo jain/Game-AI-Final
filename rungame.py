@@ -55,10 +55,7 @@ obstacles = obstacles + mirror
 
 ########################
 
-def core_CreateBuilding1(loc):
-	c3 = Castle(BASE, (75, 360), world, 3)
-	c3.setNavigator(nav)
-	world.addBase(c3)
+
 
 
 class MyHumanMinion(MyMinion):
@@ -88,10 +85,10 @@ nav.setWorld(world)
 
 #c1 = Castle(BASE, (75,360),world,1, MyHumanMinion)
 #c2 = Castle(BASE, (1280-75,360),world,2, MyAlienMinion)
-c1 = CastleBase(BASE, (75,y/2),world,1)
-c2 = CastleBase(BASE, (x-75,y/2),world,2)
-world.addBase(c1)
-world.addBase(c2)
+c1 = CastleBase(BASE, (180,y/2),world,1)
+c2 = CastleBase(BASE, (x-180,y/2),world,2)
+world.addCastle(c1)
+world.addCastle(c2)
 
 world.run()
 

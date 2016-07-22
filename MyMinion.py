@@ -29,7 +29,7 @@ class MyMinion(Minion):
     def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
                  firerate=FIRERATE, bulletclass=SmallBullet):
         Minion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
-        self.states = [Idle, Move, AttackMinionHero, AttackTowerBase]
+        self.states = [Idle, Move, AttackMinionHero, AttackBuildingCastle]
         self.world = world
         self.position = position
         self.bullet = bulletclass
@@ -73,17 +73,17 @@ class Idle(State):
         '''
         #print "IDLE STATE"
         myTeam = self.agent.getTeam()
-        towers = self.agent.world.getEnemyTowers(myTeam)
-        myBase = self.agent.world.getBaseForTeam(myTeam)
+        buildings = self.agent.world.getEnemyBuildings(myTeam)
+        myCastle = self.agent.world.getCastleForTeam(myTeam)
         #print "NO OF MINIONS: ", myBase.numSpawned
-        if towers:
-            nearTower, nearToweDist = getNearest(self.agent, towers)
-            self.agent.changeState(Move, nearTower)
+        if buildings:
+            nearBuilding, nearBuildDist = getNearest(self.agent, buildings)
+            self.agent.changeState(Move, nearBuilding)
         else:
-            bases = self.agent.world.getEnemyBases(myTeam)
-            if bases:
-                nearBase, nearBaseDist = getNearest(self.agent, bases)
-                self.agent.changeState(Move, nearBase)
+            castles = self.agent.world.getEnemyCastles(myTeam)
+            if castles:
+                nearCastle, nearCastleDist = getNearest(self.agent, castles)
+                self.agent.changeState(Move, nearCastle)
         '''
         if self.agent.isMoving() == False:
             self.timest = delta
@@ -130,7 +130,7 @@ class Move(State):
         #print "MOVE STATE"
         tower = 0
         if distance(self.agent.getLocation(), self.target.getLocation()) <= self.agent.bullet_range:
-            self.agent.changeState(AttackTowerBase, self.target)
+            self.agent.changeState(AttackBuildingCastle, self.target)
             tower = tower + 1
 
         count = 0
@@ -190,7 +190,7 @@ class AttackMinionHero(State):
                 self.agent.changeState(Idle)
 
 
-class AttackTowerBase(State):
+class AttackBuildingCastle(State):
     def parseArgs(self, args):
         self.target = args[0]
 

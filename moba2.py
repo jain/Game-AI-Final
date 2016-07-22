@@ -515,8 +515,103 @@ class MOBAWorld(GatedWorld):
 		GatedWorld.__init__(self, seed, worlddimensions, screendimensions, numgates, alarm)
 		self.bases = []
 		self.towers = []
+		self.castles = []
+		self.buildings = []
 		self.score = {}
-	
+
+	def addCastle(self, castle):
+		self.castles.append(castle)
+		if self.sprites is not None:
+			self.sprites.add(castle)
+		self.movers.append(castle)
+		
+	def addBuilding(self, building):
+		self.buildings.append(building)
+		if self.sprites is not None:
+			self.sprites.add(building)
+		self.movers.append(building)
+
+	def deleteCastle(self, castle):
+		if castle in self.castles:
+			self.castles.remove(castle)
+			if self.sprites is not None:
+				self.sprites.remove(castle)
+			self.movers.remove(castle)
+
+	def deleteBuilding(self, building):
+		if building in self.buildings:
+			self.buildings.remove(building)
+			if self.sprites is not None:
+				self.sprites.remove(building)
+			self.movers.remove(building)
+
+	def getCastles(self):
+		return list(self.castles)
+
+	def getBuildings(self):
+		return list(self.buildings)
+
+	def getCastleForTeam(self, team):
+		castles = []
+		for t in self.castles:
+			if t.getTeam() == team:
+				castles.append(t)
+		return castles
+
+	def getBuildingsForTeam(self, team):
+		buildings = []
+		for t in self.buildings:
+			if t.getTeam() == team:
+				buildings.append(t)
+		return buildings
+
+	def getEnemyCastles(self, myteam):
+		castles = []
+		for t in self.castles:
+			if t.getTeam() != myteam:
+				castles.append(t)
+		return castles
+
+	def getEnemyBuildings(self, myteam):
+		buildings = []
+		for t in self.buildings:
+			if t.getTeam() != myteam:
+				buildings.append(t)
+		return buildings
+
+	def getCastlesAndBuildingsForTeam(self, team):
+		castleandbuilding = []
+		for t in self.castles:
+			if t.getTeam() == team:
+				castleandbuilding.append(t)
+		for t in self.buildings:
+			if t.getTeam() == team:
+				castleandbuilding.append(t)
+		return castleandbuilding
+
+	def getCastlesAndBuildings(self):
+		castleandbuilding = []
+		for t in self.castles:
+			castleandbuilding.append(t)
+		for t in self.buildings:
+			castleandbuilding.append(t)
+		return castleandbuilding
+
+	def getEnemyCastlesAndBuildings(self, myteam):
+		castleandbuilding = []
+		for t in self.castles:
+			if t.getTeam() != myteam:
+				castleandbuilding.append(t)
+		for t in self.buildings:
+			if t.getTeam() != myteam:
+				castleandbuilding.append(t)
+		return castleandbuilding
+
+###########################################
+
+
+
+
 	def addBase(self, base):
 		self.bases.append(base)
 		if self.sprites is not None:
@@ -529,8 +624,7 @@ class MOBAWorld(GatedWorld):
 			if self.sprites is not None:
 				self.sprites.remove(base)
 			self.movers.remove(base)
-	
-	
+
 	def addTower(self, tower):
 		self.towers.append(tower)
 		if self.sprites is not None:
@@ -552,7 +646,7 @@ class MOBAWorld(GatedWorld):
 			if b.getTeam() == team:
 				return b
 		return None
-	
+
 	def getEnemyBases(self, myteam):
 		bases = []
 		for b in self.bases:
@@ -576,6 +670,8 @@ class MOBAWorld(GatedWorld):
 			if t.getTeam() != myteam:
 				towers.append(t)
 		return towers
+
+
 	
 	def getNPCsForTeam(self, team):
 		npcs = []

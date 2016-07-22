@@ -179,8 +179,8 @@ class CastleBase(Mover):
 
 	def die(self):
 		Mover.die(self)
-#		print "castle dies", self
-		self.world.deleteBase(self)
+		print "castle dies", self
+		self.world.deleteCastle(self)
 
 	def shoot(self):
 		if self.canfire:
@@ -270,30 +270,7 @@ class Building(Mover):
 				angle = corerandom.randint(0, 360)
 				self.spawnNPC(self.minionType, angle)
 			self.buildTimer = 0
-		if self.canfire == False:
-			self.firetimer = self.firetimer + 1
-			if self.firetimer >= self.firerate:
-				self.canfire = True
-				self.firetimer = 0
-		if self.canfire and len(self.world.getTowersForTeam(self.getTeam())) == 0:
-			targets = []
-			minions = []
-			heros = []
-			for npc in self.world.npcs + [self.world.agent]:
-				if npc.getTeam() == None or npc.getTeam() != self.getTeam() and distance(self.getLocation(),
-																						 npc.getLocation()) < BASEBULLETRANGE:
-					hit = rayTraceWorld(self.getLocation(), npc.getLocation(), self.world.getLines())
-					if hit == None:
-						if isinstance(npc, Minion):
-							minions.append(npc)
-						'''elif isinstance(npc, Hero):
-							heros.append(npc)'''
-			minions = sorted(minions, key=lambda x: distance(self.getLocation(), x.getLocation()))
-			heros = sorted(heros, key=lambda x: distance(self.getLocation(), x.getLocation()))
-			targets = minions + heros
-			if len(targets) > 0:
-				self.turnToFace(targets[0].getLocation())
-				self.shoot()
+
 
 
 	def damage(self, amount):
@@ -305,8 +282,8 @@ class Building(Mover):
 
 	def die(self):
 		Mover.die(self)
-		print "base dies", self
-		self.world.deleteBase(self)
+		print "building dies", self
+		self.world.deleteBuilding(self)
 
 
 	def shoot(self):
@@ -328,53 +305,5 @@ class Building(Mover):
 
 	def getHitpoints(self):
 		return self.hitpoints
-
-from MyMinion import MyMinion
-
-
-class BigBullet(MOBABullet):
-	def __init__(self, position, orientation, world):
-		MOBABullet.__init__(self, position, orientation, world, "sprites/bullet4.png", BIGBULLETSPEED, BIGBULLETDAMAGE,
-							BIGBULLETRANGE)
-
-
-###########################
-### SmallBullet
-
-class SmallBullet(MOBABullet):
-	def __init__(self, position, orientation, world):
-		MOBABullet.__init__(self, position, orientation, world, SMALLBULLET, SMALLBULLETSPEED, SMALLBULLETDAMAGE,
-							BIGBULLETRANGE)
-
-
-###########################
-### BaseBullet
-
-class BaseBullet(MOBABullet):
-	def __init__(self, position, orientation, world):
-		MOBABullet.__init__(self, position, orientation, world, "sprites/bullet3.png", BASEBULLETSPEED,
-							BASEBULLETDAMAGE, BASEBULLETRANGE)
-
-class MyHumanMinion(MyMinion):
-	def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
-				 hitpoints=HITPOINTS,
-				 firerate=FIRERATE, bulletclass=SmallBullet):
-		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-						  bulletclass)
-
-class MyAlienMinion(MyMinion):
-	def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
-				 hitpoints=HITPOINTS * 2,
-				 firerate=FIRERATE, bulletclass=BaseBullet):
-		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-						  bulletclass)
-
-class MyEliteMinion(MyMinion):
-	def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
-				 hitpoints=HITPOINTS * 3,
-				 firerate=FIRERATE, bulletclass=BigBullet):
-		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-						  bulletclass)
-
 
 
