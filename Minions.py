@@ -26,10 +26,11 @@ from Castle import *
 from math import *
 
 ## BASEMINION'S CONSTANTS ##
-GROUPING_RANGE = 250
-ALIGNMENT_WEIGHT = 0.25
-COHESION_WEIGHT = 1
-SEPARATION_WEIGHT = 3
+GROUPING_RANGE = 200
+ALIGNMENT_WEIGHT = 4
+COHESION_WEIGHT = 6
+SEPARATION_WEIGHT = 24
+INFLUENCE_PERCENT = 0.33
 
 ## MINION A'S CONSTANTS ##
 SPEED_A = (5, 5)
@@ -52,9 +53,9 @@ BULLETRANGE_B = 25
 ## MINION C'S CONSTANTS ##
 SPEED_C = (5, 5)
 HITPOINTS_C = 15
-FIRERATE_C = 100
+FIRERATE_C = 80
 BULLET_C = "sprites/bullet2.gif"
-BULLETSPEED_C = (20, 20)
+BULLETSPEED_C = (15, 15)
 BULLETDAMAGE_C = 5
 BULLETRANGE_C = 250
 AREAEFFECTDAMAGE_C = 10
@@ -103,7 +104,7 @@ class BaseMinion(Minion):
         v = numpy.divide(v, len(nearby))
         # Find difference from self position, return normalized vector
         v = numpy.subtract(v, self.getLocation())
-        v = numpy.divide(v, vectorMagnitude(v))
+        #v = numpy.divide(v, vectorMagnitude(v))
         return v
     
     def getSeparationVector(self, nearby):
@@ -118,7 +119,7 @@ class BaseMinion(Minion):
         #v = numpy.subtract(v, self.getLocation())
         # Find opposite vector and return normalization of it
         v = numpy.multiply(v, -1)
-        v = numpy.divide(v, vectorMagnitude(v))
+        #v = numpy.divide(v, vectorMagnitude(v))
         return v
     
     def getInfluenceVector(self):
@@ -136,6 +137,7 @@ class BaseMinion(Minion):
         # Normalize if able and return the vector
         if vectorMagnitude(v) != 0:
             v = numpy.divide(v, vectorMagnitude(v))
+        v = [m*n*INFLUENCE_PERCENT for m,n in zip(v, self.speed)]
         return v
 
     def update(self, delta):
@@ -156,14 +158,15 @@ class BaseMinion(Minion):
             else:
                 # Move
                 normalizedDirection = [x/mag for x in direction]
-                direction = numpy.add(normalizedDirection, self.getInfluenceVector())
-                normalizedDirection = [x/vectorMagnitude(direction) for x in direction]
+                #direction = numpy.add(normalizedDirection, self.getInfluenceVector())
+                #normalizedDirection = [x/vectorMagnitude(direction) for x in direction]
                 targetDistance = numpy.subtract(self.moveTarget, self.getLocation())
                 next = [m*n for m,n in zip(normalizedDirection,self.speed)]
                 if all(abs(a) < abs(b) for a,b in zip(targetDistance, next)):
                     next = targetDistance
                 #normalizedDirection = [x/mag for x in direction]
                 #next = [m*n for m,n in zip(normalizedDirection,self.speed)]
+                next = numpy.add(next, self.getInfluenceVector())
                 self.distanceTraveled = self.distanceTraveled + distance((0,0), next)
                 self.move(next)
                 self.navigator.update(delta)
@@ -236,7 +239,9 @@ class Move(State):
         self.agent.navigateTo(args[0])
     
     def execute(self, delta = 0):
-        agent = self.agent        
+        agent = self.agent
+        if agent.getMoveTarget() == None:
+            agent.changeState(Idle)
         # Following ATTACK_ORDER listing, look for nearby agents and attack closest, highest priority target
         for type in agent.attackorder:
             agents = sorted([(distance(x.getLocation(), agent.getLocation()), x) for x in agent.getVisibleType(type) if x.getTeam() != agent.getTeam() and withinRange(x.getLocation(), agent.getLocation(), agent.bullet_range)])
