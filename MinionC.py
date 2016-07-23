@@ -27,7 +27,6 @@ from math import sqrt
 from BaseMinion import *
 from MinionB import *
 
-ATTACK_ORDER = [MinionB, BaseMinion, Building, CastleBase]
 MYHITPOINTS = 20
 MYSPEED = (5, 5)
 MYFIRERATE = 50

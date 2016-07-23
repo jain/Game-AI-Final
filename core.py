@@ -1038,9 +1038,7 @@ class GameWorld():
 			from MyMinion import MyMinion
 			from moba2 import SmallBullet,BigBullet,BaseBullet
 			from astarnavigator import AStarNavigator
-			from MinionA import MinionA
-			from MinionB import MinionB, MeleeBullet
-			from MinionC import MinionC, AoEBullet
+			from Minions import TankMinion, ADCMinion, AoEMinion, StandardBullet, MeleeBullet, AoEBullet
 			class MyHumanMinion(MyMinion):
 				def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
 							 hitpoints=HITPOINTS,
@@ -1066,13 +1064,13 @@ class GameWorld():
 			#core_CreateBuilding1(loc)
 			if key==101:
 				cost = 300
-				c3 = Building(FACTORY1, loc, self.agent.world, 1, MinionA)
+				c3 = Building(FACTORY1, loc, self.agent.world, 1, ADCMinion)
 			elif key==102:
 				cost = 500
-				c3 = Building(FACTORY2, loc, self.agent.world, 1, MinionB)
+				c3 = Building(FACTORY2, loc, self.agent.world, 1, TankMinion)
 			elif key==103:
 				cost = 700
-				c3 = Building(FACTORY3, loc, self.agent.world, 1, MinionC)
+				c3 = Building(FACTORY3, loc, self.agent.world, 1, AoEMinion)
 			if cost > self.my_gold:
 				print 'NOT ENOUGH GOLD'
 				return
@@ -1144,9 +1142,7 @@ class GameWorld():
 		from MyMinion import MyMinion
 		from moba2 import SmallBullet, BigBullet, BaseBullet
 		from astarnavigator import AStarNavigator
-		from MinionA import MinionA
-		from MinionB import MinionB, MeleeBullet
-		from MinionC import MinionC, AoEBullet
+		from Minions import TankMinion, ADCMinion, AoEMinion, StandardBullet, MeleeBullet, AoEBullet
 		class MyHumanMinion(MyMinion):
 			def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
 						 hitpoints=HITPOINTS,
@@ -1215,7 +1211,7 @@ class GameWorld():
 		self.ai_gold += 1
 		self.ai_lastbuilt -= 1
 		factories = [FACTORY1, FACTORY2, FACTORY3]
-		miniontypes = [MinionA, MinionB, MinionC]
+		miniontypes = [ADCMinion, TankMinion, AoEMinion]
 		costarr = [300, 500, 700]
 		if self.ai_lastbuilt == 0:
 			self.ai_lastbuilt = 10

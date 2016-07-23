@@ -25,6 +25,7 @@ from core import *
 from Castle import *
 from math import *
 
+GROUPING_RANGE = 250
 ALIGNMENT_WEIGHT = 0.25
 COHESION_WEIGHT = 1
 SEPARATION_WEIGHT = 3
@@ -33,11 +34,7 @@ class BaseMinion(Minion):
     def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
                  firerate=FIRERATE, bulletclass=SmallBullet):
         Minion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
-        self.world = world
-        self.position = position
-        self.bullet = bulletclass
-        self.bullet_range = bulletclass((0,0),0,None).range
-        self.grouping_range = 250
+        self.grouping_range = GROUPING_RANGE
     
     def getAlignmentVector(self, nearby):
         # Set default orientation
