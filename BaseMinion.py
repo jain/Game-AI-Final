@@ -25,6 +25,10 @@ from core import *
 from Castle import *
 from math import *
 
+ALIGNMENT_WEIGHT = 0.25
+COHESION_WEIGHT = 1
+SEPARATION_WEIGHT = 3
+
 class BaseMinion(Minion):
     def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
                  firerate=FIRERATE, bulletclass=SmallBullet):
@@ -33,7 +37,7 @@ class BaseMinion(Minion):
         self.position = position
         self.bullet = bulletclass
         self.bullet_range = bulletclass((0,0),0,None).range
-        self.grouping_range = 200
+        self.grouping_range = 250
     
     def getAlignmentVector(self, nearby):
         # Set default orientation
@@ -64,7 +68,8 @@ class BaseMinion(Minion):
         v = [0, 0]
         # For each ally, add the translational difference between them and self to offset
         for ally in nearby:
-            v = numpy.add(v, numpy.subtract(ally.getLocation(), self.getLocation()))
+            dropoff = 1 - distance(ally.getLocation(), self.getLocation())/self.grouping_range
+            v = numpy.multiply(numpy.add(v, numpy.subtract(ally.getLocation(), self.getLocation())), dropoff)
         # Divide total offset by number of agents nearby
         v = numpy.divide(v, len(nearby))
         #v = numpy.subtract(v, self.getLocation())
@@ -83,9 +88,8 @@ class BaseMinion(Minion):
         a = self.getAlignmentVector(nearby)
         c = self.getCohesionVector(nearby)
         s = self.getSeparationVector(nearby)
-        a_weight, c_weight, s_weight = 3, 1.1, 1.25
-        v = numpy.add(numpy.multiply(a, a_weight), numpy.multiply(c, c_weight))
-        v = numpy.add(v, numpy.multiply(s, s_weight))
+        v = numpy.add(numpy.multiply(a, ALIGNMENT_WEIGHT), numpy.multiply(c, COHESION_WEIGHT))
+        v = numpy.add(v, numpy.multiply(s, SEPARATION_WEIGHT))
         # Normalize if able and return the vector
         if vectorMagnitude(v) != 0:
             v = numpy.divide(v, vectorMagnitude(v))
