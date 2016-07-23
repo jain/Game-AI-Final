@@ -24,11 +24,12 @@ from utils import *
 from core import *
 from Castle import *
 from math import sqrt
+from BaseMinion import *
 
-class MyMinion(Minion):
+class MyMinion(BaseMinion):
     def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
                  firerate=FIRERATE, bulletclass=SmallBullet):
-        Minion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
+        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
         self.states = [Idle, Move, AttackMinionHero, AttackBuildingCastle]
         self.world = world
         self.position = position
@@ -41,7 +42,7 @@ class MyMinion(Minion):
     ### YOUR CODE GOES ABOVE HERE ###
 
     def start(self):
-        Minion.start(self)
+        BaseMinion.start(self)
         self.changeState(Idle)
 
 
