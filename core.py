@@ -23,6 +23,9 @@ from constants import *
 from utils import *
 import random
 import math
+from vector import *
+import bisect
+import collections
 #
 
 ###########################
@@ -855,6 +858,7 @@ class GameWorld():
 		self.ai_gold = 1000
 		self.ai_lastbuilt = 5
 		self.font = pygame.font.Font(None,50)
+		self.lastBuilding = None
 	
 	def getPoints(self):
 		return self.points
@@ -1163,48 +1167,182 @@ class GameWorld():
 						 firerate=FIRERATE, bulletclass=BigBullet):
 				MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
 								  bulletclass)
-		def findpt(circle_r, basept):
-			circle_x, circle_y = basept
 
-			# random angle
-			alpha = 2 * math.pi * random.random()
-			# random radius
-			u = random.random() + random.random()
-			r = circle_r * (2 - u if u > 1 else u)
-			while(circle_r - r >30):
+		def cdf(weights):
+			total = sum(weights)
+			result = []
+			cumsum = 0
+			for w in weights:
+				cumsum += w
+				result.append(cumsum / total)
+			return result
+
+		def choice(population, weights):
+			assert len(population) == len(weights)
+			cdf_vals = cdf(weights)
+			x = random.random()
+			idx = bisect.bisect(cdf_vals, x)
+			return population[idx]
+
+		def point_inside_polygon(pt, poly):
+			x, y = pt
+			n = len(poly)
+			inside = False
+
+			p1x, p1y = poly[0]
+			for i in range(n + 1):
+				p2x, p2y = poly[i % n]
+				if y > min(p1y, p2y):
+					if y <= max(p1y, p2y):
+						if x <= max(p1x, p2x):
+							if p1y != p2y:
+								xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+							if p1x == p2x or x <= xinters:
+								inside = not inside
+				p1x, p1y = p2x, p2y
+
+			return inside
+
+		def dist_linept(p1, p2, p3):  # x3,y3 is the point
+			x1, y1 = p1
+			x2, y2 = p2
+			x3, y3 = p3
+
+			px = x2 - x1
+			py = y2 - y1
+
+			something = px * px + py * py
+
+			u = ((x3 - x1) * px + (y3 - y1) * py) / float(something)
+
+			if u > 1:
+				u = 1
+			elif u < 0:
+				u = 0
+
+			x = x1 + u * px
+			y = y1 + u * py
+
+			dx = x - x3
+			dy = y - y3
+
+			# Note: If the actual distance does not matter,
+			# if you only want to compare what this function
+			# returns to other results of this function, you
+			# can just return the squared distance instead
+			# (i.e. remove the sqrt) to gain a little performance
+
+			dist = math.sqrt(dx * dx + dy * dy)
+
+			return dist
+		def findpt(circle_r, basept):
+			canProceed = False
+			worlddim = self.getDimensions()
+			# print worlddim
+			worldx, worldy = worlddim
+			worldlines = [((0, 0), (worldx, 0)), ((worldx, 0), (worldx, worldy)), ((worldx, worldy), (0, worldy)),
+						  ((0, worldy), (0, 0))]
+			worldpoints = [(0, 0), (worldx, 0), (worldx, worldy), (0, worldy)]
+			while canProceed == False:
+				circle_x, circle_y = basept
+
+				# random angle
+				alpha = 2 * math.pi * random.random()
+				# random radius
 				u = random.random() + random.random()
 				r = circle_r * (2 - u if u > 1 else u)
-			# calculating cooringates
-			x = r * math.cos(alpha) + circle_x
-			y = r * math.sin(alpha) + circle_y
-			return (x,y)
-		def findBaseToBuild(team1bases):
-			type1 = 0
-			type2 = 0
-			type3 = 0
+				while(circle_r - r > 20):
+					u = random.random() + random.random()
+					r = circle_r * (2 - u if u > 1 else u)
+				# calculating cooringates
+				x = r * math.cos(alpha) + circle_x
+				y = r * math.sin(alpha) + circle_y
+				dist = []
+				for wlines in worldlines:
+					p1, p2 = wlines
+					p3 = (x, y)
+					dist.append(dist_linept(p1, p2, p3))
+				if min(dist) > 100 and point_inside_polygon((x,y), worldpoints):
+					canProceed = True
+					return (x,y)
+		def findBaseToBuild(team1bases, team2bases):
+			miniontypes = [ADCMinion, TankMinion, AoEMinion]
+			team1type1 = 0
+			team1type2 = 0
+			team1type3 = 0
+
+			team2type1 = 0
+			team2type2 = 0
+			team2type3 = 0
+
+			team1bldgcount = 0
+			team2bldgcount = 0
+
 			#print "base: ", team1bases
 			for baseitem in team1bases:
-				if baseitem.image == FACTORY1:
-					type1 += 1
-				elif baseitem.image == FACTORY2:
-					type2 += 1
-				elif baseitem.image == FACTORY3:
-					type3 += 1
+
+				if baseitem.buildingType == "Building":
+					team1bldgcount += 1
+					if baseitem.minionType == miniontypes[0]:
+						team1type1 += 1
+					elif baseitem.minionType == miniontypes[1]:
+						team1type2 += 1
+					elif baseitem.minionType == miniontypes[2]:
+						team1type3 += 1
+
+			for baseitem in team2bases:
+				if baseitem.buildingType == "Building":
+					team2bldgcount += 1
+					if baseitem.minionType == miniontypes[0]:
+						team2type1 += 1
+					elif baseitem.minionType == miniontypes[1]:
+						team2type2 += 1
+					elif baseitem.minionType == miniontypes[2]:
+						team2type3 += 1
+
+			print "TEAM 1: ", team1type1, team1type2, team1type3
+			print "TEAM 2: ", team2type1, team2type2, team2type3
+
 			if self.ai_gold < 300:
 				return None
-			max = type1
-			basetype = 0
-			if type2 > max and self.ai_gold >= 500:
-				max = type2
+
+			if (team1type3 - team2type3) >= 2:
+				basetype = 2
+				return basetype
+			'''elif (team1type3 - team2type3) >= 2:
+				print "RETURN NONE!"
+				return None'''
+
+			if (team1bldgcount - team2bldgcount) >= 5:
 				basetype = 1
-			if type3 > max and self.ai_gold >= 700:
-				max = type3
+				return basetype
+			'''elif (team1bldgcount - team2bldgcount) > 5:
+				return None'''
+
+			if (team2bldgcount - team1bldgcount) >= 5:
+				basetype = 1
+				return basetype
+			'''elif (team2bldgcount - team1bldgcount) > 5:
+				return None'''
+
+			randval = numpy.random.choice([0, 1, 2], 5, p=[0.5, 0.30, 0.20])
+			#randval = choice([0, 1, 2], [0.5, 0.3, 0.2])
+			print "RAND VAL: ",randval
+			return randval[3]
+			'''
+			max = team1type1
+			basetype = 0
+			if team1type2 > max and self.ai_gold >= 500:
+				max = team1type2
+				basetype = 1
+			if team1type3 > max and self.ai_gold >= 700:
+				max = team1type3
 				basetype = 2
 			if max == 0:
 				arr = [FACTORY1, FACTORY2, FACTORY3]
 				max = random.randint(0,2)
 				basetype = max
-			return basetype
+			return basetype'''
 		self.clock = self.clock + delta
 		self.worldCollisionTest()
 		self.my_gold += 1
@@ -1215,24 +1353,30 @@ class GameWorld():
 		costarr = [300, 500, 700]
 		if self.ai_lastbuilt == 0:
 			self.ai_lastbuilt = 10
-			basepts = []
-			bases = self.getCastlesAndBuildingsForTeam(2)
-			for bse in bases:
-				basepts.append(bse.getLocation())
-			for basept in basepts:
-				buildpt = findpt(BUILDRADIUS, basept)
+			if self.lastBuilding == None:
+				basepts = []
+				bases = self.getCastlesAndBuildingsForTeam(2)
 				team1bases = self.getCastlesAndBuildingsForTeam(1)
-				basetype = findBaseToBuild(team1bases)
-				#print "base type: ",basetype
-				if basetype == None:
-					return None
-				canProceed = False
-				whilecount = 0
-				while canProceed == False:
-					whilecount += 1
-					if whilecount > 10:
+				team2bases = self.getCastlesAndBuildingsForTeam(2)
+				basetype = findBaseToBuild(team1bases, team2bases)
+				for bse in bases:
+					basepts.append(bse.getLocation())
+				for basept in basepts:
+					buildpt = findpt(BUILDRADIUS, basept)
+					self.lastBuilding = basetype
+					print "base type1: ",basetype
+					print "ai_gold1: ", self.ai_gold
+					if basetype == None:
+						return None
+					if self.ai_gold < costarr[basetype]:
 						return None
 					canProceed = True
+					whilecount = 0
+					'''while canProceed == False:
+						whilecount += 1
+						if whilecount > 10:
+							return None
+						canProceed = True'''
 					c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
 					lins = c3.getLines()
 					bases = self.getCastlesAndBuildings()
@@ -1246,18 +1390,76 @@ class GameWorld():
 							for lin2 in lins:
 								if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
 									canProceed = False
-									buildpt = findpt(BUILDRADIUS, basept)
-				c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
-				if self.ai_gold < costarr[basetype]:
-					return None
-				self.ai_gold -= costarr[basetype]
-				# self.lines += lins
-				nav = AStarNavigator()
-				nav.agent = self.agent
-				nav.setWorld(self.agent.world)
-				c3.setNavigator(nav)
-				print "LINES: ", c3.getLines()
-				self.addBuilding(c3)
+									#buildpt = findpt(BUILDRADIUS, basept)
+					if canProceed == False:
+						continue
+					c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					if self.ai_gold < costarr[basetype]:
+						return None
+					self.ai_gold -= costarr[basetype]
+					# self.lines += lins
+					nav = AStarNavigator()
+					nav.agent = self.agent
+					nav.setWorld(self.agent.world)
+					c3.setNavigator(nav)
+					#print "LINES: ", c3.getLines()
+					self.addBuilding(c3)
+					self.lastBuilding = None
+			elif self.ai_gold >= costarr[self.lastBuilding]:
+				basetype = self.lastBuilding
+				basepts = []
+				bases = self.getCastlesAndBuildingsForTeam(2)
+				print "base type: ", basetype
+				print "ai_gold: ", self.ai_gold
+				for bse in bases:
+					basepts.append(bse.getLocation())
+				for basept in basepts:
+					buildpt = findpt(BUILDRADIUS, basept)
+					team1bases = self.getCastlesAndBuildingsForTeam(1)
+					team2bases = self.getCastlesAndBuildingsForTeam(2)
+
+					#self.lastBuilding = basetype
+
+					if basetype == None:
+						return None
+					canProceed = True
+					whilecount = 0
+					'''while canProceed == False:
+                        whilecount += 1
+                        if whilecount > 10:
+                            return None
+                        canProceed = True'''
+					c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					lins = c3.getLines()
+					bases = self.getCastlesAndBuildings()
+					linlist = []
+					for baseitem in bases:
+						linlist.append(baseitem.getLines())
+					# if lins in linlist:
+					#	linlist.remove(lins)
+					for lin1 in linlist:
+						for lin in lin1:
+							for lin2 in lins:
+								if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
+									canProceed = False
+								# buildpt = findpt(BUILDRADIUS, basept)
+					if canProceed == False:
+						continue
+					c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					if self.ai_gold < costarr[basetype]:
+						return None
+					self.ai_gold -= costarr[basetype]
+					# self.lines += lins
+					nav = AStarNavigator()
+					nav.agent = self.agent
+					nav.setWorld(self.agent.world)
+					c3.setNavigator(nav)
+					# print "LINES: ", c3.getLines()
+					self.addBuilding(c3)
+					self.lastBuilding = None
+			else:
+				print "ai_gold: ", self.ai_gold
+				return None
 		return None
 
 

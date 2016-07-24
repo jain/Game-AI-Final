@@ -510,7 +510,8 @@ class MOBAWorld(GatedWorld):
 	### bases: the bases (one per team)
 	### towers: the towers (many per team)
 	### score: dictionary with team symbol as key and team score as value. Score is amount of damage done to the hero.
-	
+	from Minions import TankMinion, ADCMinion, AoEMinion
+	miniontypes = [ADCMinion, TankMinion, AoEMinion]
 	def __init__(self, seed, worlddimensions, screendimensions, numgates, alarm):
 		GatedWorld.__init__(self, seed, worlddimensions, screendimensions, numgates, alarm)
 		self.bases = []

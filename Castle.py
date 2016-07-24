@@ -130,6 +130,7 @@ class CastleBase(Mover):
 		self.firetimer = 0
 		self.canfire = True
 		self.bulletclass = bulletclass
+		self.buildingType = "Castle"
 
 	def getLines(self):
 		p1 = self.rect.topleft
@@ -214,9 +215,10 @@ class Building(Mover):
 		self.minionType = minionType
 		self.firerate = firerate
 		self.firetimer = 0
-		self.canfire = True
+		self.canfire = False
 		self.bulletclass = bulletclass
 		self.numSpawned = 0
+		self.buildingType = "Building"
 
 	def getLines(self):
 		p1 = self.rect.topleft
