@@ -54,16 +54,12 @@ class MOBABullet(Bullet):
 		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			self.hit(thing)
 
+
 	def hit(self, thing):
 		ret = Bullet.hit(self, thing)
 		if ret:
 			return True
-		elif isinstance(thing, Building) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
-			thing.damage(self.getDamage())
-			return True
-		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
-			thing.damage(self.getDamage())
-			return True
+
 		else:
 			return False
 
@@ -362,6 +358,7 @@ class GoldMiner(Building):
 		self.goldTimer = 0
 		self.goldRate = goldRate
 		self.goldPerCycle = goldPerCycle
+		self.buildingType = "GoldMiner"
 	
 	def update(self, delta):
 		Building.update(self, delta)
@@ -373,13 +370,14 @@ class GoldMiner(Building):
 
 
 class AttackBooster(Building):
-	def __init__(self, image, position, world, team=None, boostType=DEFAULTBOOSTTYPE, attackModifier=ATTACKMOD, hitpoints=SUPPORTHITPOINTS):
-		Building.__init__(self, image, position, world, team, hitpoints)
-		self.boostType = boostType
-		self.attackModifier = attackModifier
-	
-	def boostAttack(self, baseAttack):
-		if self.boostType == 0: # Add modifier to base attack
-			return baseAttack + self.attackModifier
-		else: # Multiply base attack by modifier
-			return baseAttack*self.attackModifier
+    def __init__(self, image, position, world, team=None, boostType=DEFAULTBOOSTTYPE, attackModifier=ATTACKMOD, hitpoints=SUPPORTHITPOINTS):
+        Building.__init__(self, image, position, world, team, hitpoints)
+        self.boostType = boostType
+        self.attackModifier = attackModifier
+        self.buildingType = "AttackBooster"
+
+    def boostAttack(self, baseAttack):
+        if self.boostType == 0: # Add modifier to base attack
+            return baseAttack + self.attackModifier
+        else: # Multiply base attack by modifier
+            return baseAttack*self.attackModifier

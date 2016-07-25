@@ -209,12 +209,24 @@ class Bullet(Mover):
 
 	### Hit verifies that it has hit something hitable and what it should do (e.g., cause damage) 
 	def hit(self, thing):
+		from Castle import Building, CastleBase
 		if thing != self.owner and isinstance(thing, Agent) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			dmg = self.getDamage()
 			thing.damage(dmg)
 			self.damageCaused(self.owner, thing, dmg)
+			self.world.damagepts[thing.getTeam() - 1] += dmg
 			return True
 		elif isinstance(thing, Obstacle) or isinstance(thing, Gate) or self.position[0] < 0 or self.position[0] > self.world.dimensions[0] or self.position[1] < 0 or self.position[1] > self.world.dimensions[1]:
+			return True
+		elif isinstance(thing, Building) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+			#print "BUILDING DAMAGE"
+			thing.damage(self.getDamage())
+			self.world.damagepts[thing.getTeam() - 1] += self.getDamage()
+			return True
+		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+			#print "CASTLE DAMAGE"
+			thing.damage(self.getDamage())
+			self.world.damagepts[thing.getTeam() - 1] += self.getDamage()
 			return True
 		else:
 			return False
@@ -252,7 +264,7 @@ class Agent(Mover):
 
 	### Constructor
 	def __init__(self, image, position, orientation, speed, world, hitpoints = HITPOINTS, firerate = FIRERATE, bulletclass = Bullet):
-		Mover.__init__(self, image, position, orientation, speed, world) 
+		Mover.__init__(self, image, position, orientation, speed, world)
 		self.moveTarget = None
 		self.moveOrigin = None
 		self.navigator = None
@@ -273,7 +285,7 @@ class Agent(Mover):
 			drawCross(self.world.background, self.moveTarget, (0, 0, 0), 5)
 			direction = [m - n for m,n in zip(self.moveTarget,self.position)]
 			# Figure out distance to moveTarget
-#			mag = reduce(lambda x, y: (x**2)+(y**2), direction)**0.5 
+#			mag = reduce(lambda x, y: (x**2)+(y**2), direction)**0.5
 			mag = distance(self.getLocation(), self.moveTarget)
 			if mag < self.getRadius()/2.0: #min(self.rect.width,self.rect.height)/2.0:
 				# Close enough
@@ -303,10 +315,10 @@ class Agent(Mover):
 				self.canfire = True
 				self.firetimer = 0
 		return None
-		
+
 	def doneMoving(self):
 		return None
-		
+
 	### NOTE: problem: Agent can be subclassed and collision() can be overridden such that the agent is not stopped by obstacles/blockers
 	def collision(self, thing):
 		Mover.collision(self, thing)
@@ -318,14 +330,14 @@ class Agent(Mover):
 				if self.navigator != None:
 					self.navigator.collision(thing)
 		return None
-		
-			
+
+
 	### MoveToTarget tells the agent where to go and starts movement
 	def moveToTarget(self, pos):
 		self.moveTarget = pos
 		self.moveOrigin = self.position
 		self.turnToFace(pos)
-	
+
 
 	### Set the pathplanning module
 	def setNavigator(self, navigator):
@@ -346,13 +358,13 @@ class Agent(Mover):
 			return bullet
 		else:
 			return None
-			
+
 	def setTeam(self, team):
 		self.team = team
-		
+
 	def getTeam(self):
 		return self.team
-		
+
 	def damage(self, amount):
 		self.hitpoints = self.hitpoints - amount
 		### Something should happen when hitpoints are <= 0
@@ -363,23 +375,23 @@ class Agent(Mover):
 		Mover.die(self)
 		self.stop()
 		self.world.deleteNPC(self)
-		
+
 	def start(self):
 		return None
-		
+
 	def stop(self):
 		self.stopMoving()
-		
+
 	def stopMoving(self):
 		self.moveTarget = None
-		
+
 	def isMoving(self):
 		if self.moveTarget is not None:
 			return True
 		else:
 			return False
 
-		
+
 	def getMoveTarget(self):
 		return self.moveTarget
 
@@ -387,20 +399,20 @@ class Agent(Mover):
 		return self.hitpoints
 
 	def canFire(self):
-		return self.canfire 
+		return self.canfire
 
-							
+
 #####################
 ### GhostAgent
-### 
+###
 ### Doesn't collide with anything. This is handled by overriding the collision function, which is generally a bad idea.
 
 class GhostAgent(Agent):
 
 	def collision(self, thing):
 		return None
-		
-		
+
+
 
 #####################
 ### Gatherer
@@ -415,16 +427,16 @@ class Gatherer(Agent):
 
 	### Constructor
 	def __init__(self, image, position, orientation, speed, world, hitpoints = HITPOINTS, firerate = FIRERATE, bulletclass = Bullet):
-		Agent.__init__(self, image, position, orientation, speed, world, hitpoints, firerate, bulletclass) 
+		Agent.__init__(self, image, position, orientation, speed, world, hitpoints, firerate, bulletclass)
 		self.targets = []
 		self.score = 0
-	
+
 	def setTargets(self, targets):
 		self.targets = targets
-	
+
 	def addTarget(self, target):
 		self.targets.append(target)
-		
+
 	def addToScore(self, points):
 		self.score = self.score + points
 		print "score", self.score
@@ -434,7 +446,7 @@ class Gatherer(Agent):
 		# Call the parent class, setting the navigator
 		Agent.setNavigator(self, navigator)
 
-		
+
 	def doneMoving(self):
 		if len(self.targets) > 0:
 			current = self.targets[0]
@@ -448,7 +460,7 @@ class Gatherer(Agent):
 		Agent.start(self)
 		if self.navigator != None and len(self.targets) > 0:
 			self.navigateTo(self.targets[0])
-			
+
 	def collision(self, thing):
 		Agent.collision(self, thing)
 #		print "gatherer collision"
@@ -461,14 +473,14 @@ class Gatherer(Agent):
 ### Navigator
 
 class Navigator():
-	
+
 	### Path: the planned path of nodes
 	### World: a pointer to the world object
 	### Agent: the agent doing the navigation
 	### source: where starting from
 	### destination: where trying to go
-	
-	
+
+
 	def __init__(self):
 		self.path = None
 		self.world = None
@@ -476,19 +488,19 @@ class Navigator():
 		self.source = None
 		self.destination = None
 
-	
+
 	def setAgent(self, agent):
 		self.agent = agent
-	
+
 	def setPath(self, path):
 		self.path = path
 
 	def getSource(self):
 		return self.source
-	
+
 	def getDestination(self):
 		return self.destination
-	
+
 	def getPath(self):
 		return self.path
 
@@ -498,8 +510,8 @@ class Navigator():
 	def setWorld(self, world):
 		# Store the world object
 		self.world = world
-	
-	
+
+
 	### Callback from Agent. Agent has reached its move target and must determine what to do next.
 	### If the path has been exhausted, the agent moves directly to the destination. Otherwise, it gets the next waypoint from the path.
 	def doneMoving(self):
@@ -524,16 +536,16 @@ class Navigator():
 	### self: the navigator object
 	def checkpoint(self):
 		return None
-	
+
 	### Callback from Agent. Agent has collided with something.
 	def collision(self, thing):
 		print "Collision"
-	
+
 	### This function gets called by the agent to figure out if some shortcutes can be taken when traversing the path.
 	### This function should update the path and return True if the path was updated
 	def smooth(self):
 		return False
-	
+
 	### Finds the shortest path from the source to the destination. It should minimally set the path.
 	### self: the navigator object
 	### source: the place the agent is starting from (i.e., it's current location)
@@ -579,15 +591,15 @@ class PathNetworkNavigator(Navigator):
 ### Abstract Navigator class that assumes the agent is traversing a path network created by a nav mesh.
 
 class NavMeshNavigator(PathNetworkNavigator):
-	
+
 	### pathnodes: the path nodes
 	### pathnetwork: the edges between path nodes
 	### navmesh: the polygons making up the nav mesh
-	
+
 	def __init__(self):
 		PathNetworkNavigator.__init__(self)
 		self.navmesh = None
-	
+
 	### Set the world object
 	### self: the navigator object
 	### world: the world object
@@ -598,7 +610,7 @@ class NavMeshNavigator(PathNetworkNavigator):
 		# Draw the world
 		self.drawNavMesh(self.world.debug)
 		self.drawPathNetwork(self.world.debug)
-	
+
 	### Create the pathnode network and pre-compute all shortest paths along the network
 	### self: the navigator object
 	### world: the world object
@@ -620,7 +632,7 @@ class NavMeshNavigator(PathNetworkNavigator):
 
 class Blocker:
 	pass
-		
+
 
 #####################
 ### Obstacle
@@ -635,20 +647,20 @@ class Obstacle(Thing, Blocker):
 	### lines: lines of polygon relative to center
 	### surface: the surface
 	### rect: the rectangle of the surface
-	
+
 	def __init__(self):
 		self.points = []
 		self.pos = [0, 0]
 		self.lines = []
 		self.surface = None
 		self.rect = None
-		
+
 	### Draw me
 	def draw(self, parent):
 		if self.surface != None:
 			parent.blit(self.surface, self.pos)
 		return None
-		
+
 	### Returns the lines with the obstacle offset
 	def getLines(self):
 		#lines = map(lambda l: ([m + n for m,n in zip(l[0], self.pos)], [m + n for m,n in zip(l[1], self.pos)]), self.lines)
@@ -665,13 +677,13 @@ class Obstacle(Thing, Blocker):
 	### Is a point one of the obstacle points?
 	def isInPoints(self, point):
 		return point in self.getPoints()
-		
+
 	def twoAdjacentPoints(self, p1, p2):
 		if self.isInPoints(p1) and self.isInPoints(p2):
 			return (abs(self.points.index(p1) - self.points.index(p2)) == 1) or (p1 == self.points[0] and p2 == self.points[len(self.points)-1]) or (p2 == self.points[0] and p1 == self.points[len(self.points)-1])
 		else:
 			return False
-			
+
 	def pointInside(self, point):
 		return pointInsidePolygonLines(point, self.lines)
 
@@ -690,7 +702,7 @@ class Decoration(pygame.sprite.Sprite):
 		img_rect.center = self.rect.center
 		self.image = rot_img
 		self.rect = img_rect
-		
+
 
 
 #####################
@@ -742,14 +754,14 @@ class RandomObstacle(Obstacle):
 		self.lines = lines
 		self.points = transpoints
 #		print "points", self.points
-		
-		
+
+
 #
-		
-		
+
+
 ############################
 ### ManualObstacle
-		
+
 class ManualObstacle(Obstacle):
 
 	### Note: the points are sorted in order of increasing angle around a central point.
@@ -761,7 +773,7 @@ class ManualObstacle(Obstacle):
 	### rect: the rectangle of the surface
 	### sprites: the sprite group for all decorations (redundant with self.decorations, but just easier this way)
 	### decorations: the decorations
-		
+
 	### Constructor
 	# pos = center point of polygon
 	# Points must be in clockwise or counterclockwise order, and relative to (0,0)
@@ -828,7 +840,7 @@ class GameWorld():
 	### bullets: all the bullets active
 	### resources: all the resources
 	### movers: all things that can collide with other things and implement collision()
-	### destinations: places that are not inside of obstacles. 
+	### destinations: places that are not inside of obstacles.
 	### clock: elapsed time in game
 
 	def __init__(self, seed, worlddimensions, screendimensions):
@@ -861,8 +873,8 @@ class GameWorld():
 		self.agent = None
 		self.npcs = []
 		self.dimensions = worlddimensions
-		self.points = None 
-		self.lines = None 
+		self.points = None
+		self.lines = None
 		self.bullets = []
 		self.resources = []
 		self.debugging = False
@@ -876,13 +888,14 @@ class GameWorld():
 		self.ai_lastbuilt = 5
 		self.font = pygame.font.Font(None,50)
 		self.lastBuilding = None
-	
+		self.damagepts = [0, 0]
+
 	def getPoints(self):
 		return self.points
-	
+
 	def getLines(self):
 		return self.lines
-	
+
 	def getLinesWithoutBorders(self):
 		corners = [(0, 0), (self.dimensions[0], 0), (self.dimensions[0], self.dimensions[1]), (0, self.dimensions[1])]
 		lines = []
@@ -891,13 +904,13 @@ class GameWorld():
 				lines.append(l)
 		return lines
 
-	
+
 	def getObstacles(self):
 		return self.obstacles
-	
+
 	def getDimensions(self):
 		return self.dimensions
-		
+
 	def setPlayerAgent(self, agent):
 		self.agent = agent
 		self.camera = [640, 360] #agent.getLocation()
@@ -925,8 +938,8 @@ class GameWorld():
 			lines = lines + o.getLines()
 		self.obstacles = obstacles
 		self.points = points
-		self.lines = lines 
-		
+		self.lines = lines
+
 	# Make Terrain
 	# polys = list of list points (poly1, poly2, ...) = ((p11, p12, ...), (p21, p22, ...), ...)
 	def initializeTerrain(self, polys, color = (0, 0, 0), linewidth = 4, sprite = None):
@@ -951,7 +964,7 @@ class GameWorld():
 		for point in points:
 			r = SimpleResource(resource, point, 0, self)
 			self.addResource(r)
-	
+
 
 	def initializeRandomResources(self, num, resource = RESOURCE):
 		for _ in xrange(num):
@@ -978,7 +991,7 @@ class GameWorld():
 		for m in self.movers:
 			self.sprites.add(m)
 		clock = pygame.time.Clock()
-		
+
 		# Draw obstacles. Only need to do this once
 		for o in self.obstacles:
 			o.draw(self.background)
@@ -988,7 +1001,7 @@ class GameWorld():
 			delta = clock.get_rawtime()
 			self.handleEvents()
 			self.update(delta)
-			self.sprites.update(delta) 
+			self.sprites.update(delta)
 			#print "obstacles"
 			#for o in self.obstacles:
 			#	print o.pos
@@ -996,7 +1009,7 @@ class GameWorld():
 			#	o.pos[1] = o.pos[1] + 1.0
 			self.drawWorld()
 			pygame.display.flip()
-			
+
 	def drawWorld(self):
 		#self.screen.blit(self.background, (0, 0))
 		offsetX = 0 #self.camera[0] #- self.agent.rect.center[0]
@@ -1014,7 +1027,7 @@ class GameWorld():
 		self.screen.blit(self.font.render('Gold: '+str(self.gold[0]),0,(185,185,0)),(0,0))
 		self.screen.blit(self.font.render('Gold: '+str(self.gold[1]),0,(185,185,0)),(self.dimensions[0]-200,0))
 		#pygame.display.flip()
-		
+
 	def drawHealthBar(self,m):
 		x1 = m.rect.topleft[0]
 		x2 = m.rect.topright[0]
@@ -1031,22 +1044,22 @@ class GameWorld():
 		else:
 			pygame.draw.rect(self.background, (255,0,0),pygame.Rect(x1+1,y1+1,w,8))
 
-	def handleEvents(self): 
+	def handleEvents(self):
 		events = pygame.event.get()
 		for event in events:
 			if event.type == QUIT:
-				sys.exit(0) 
+				sys.exit(0)
 			elif event.type == MOUSEBUTTONUP:
 				self.doMouseUp()
 			elif event.type == KEYDOWN:
 				self.doKeyDown(event.key)
-				
+
 	def doMouseUp(self):
 		pos = pygame.mouse.get_pos()
 		offsetX = pos[0] #+ self.agent.position[0] - self.camera[0]
 		offsetY = pos[1] #+ self.agent.position[1] - self.camera[1]
 		self.agent.navigateTo([offsetX, offsetY])
-		
+
 
 	def doKeyDown(self, key):
 		if key == 32: #space
@@ -1169,8 +1182,11 @@ class GameWorld():
 		for c in collisions:
 			c[0].collision(c[1])
 			c[1].collision(c[0])
-		
+
 	def update(self, delta):
+
+		print "AI GOLD: ", self.gold[1]
+		print "DAMAGE DONE BY AI", self.damagepts[0]
 		from Castle import Building, Spawner, Defense, GoldMiner, AttackBooster
 		from MyMinion import MyMinion
 		from moba2 import SmallBullet, BigBullet, BaseBullet
@@ -1196,22 +1212,6 @@ class GameWorld():
 		#				 firerate=FIRERATE, bulletclass=BigBullet):
 		#		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
 		#						  bulletclass)
-
-		def cdf(weights):
-			total = sum(weights)
-			result = []
-			cumsum = 0
-			for w in weights:
-				cumsum += w
-				result.append(cumsum / total)
-			return result
-
-		def choice(population, weights):
-			assert len(population) == len(weights)
-			cdf_vals = cdf(weights)
-			x = random.random()
-			idx = bisect.bisect(cdf_vals, x)
-			return population[idx]
 
 		def point_inside_polygon(pt, poly):
 			x, y = pt
@@ -1303,10 +1303,16 @@ class GameWorld():
 			team1type1 = 0
 			team1type2 = 0
 			team1type3 = 0
+			team1attack = 0
+			team1goldbldg = 0
+			team1tower = 0
 
 			team2type1 = 0
 			team2type2 = 0
 			team2type3 = 0
+			team2attack = 0
+			team2goldbldg = 0
+			team2tower = 0
 
 			team1bldgcount = 0
 			team2bldgcount = 0
@@ -1322,6 +1328,12 @@ class GameWorld():
 						team1type2 += 1
 					elif baseitem.minionType == miniontypes[2]:
 						team1type3 += 1
+				elif baseitem.buildingType == "Defense":
+					team1tower += 1
+				elif baseitem.buildingType == "AttackBooster":
+					team1attack += 1
+				elif baseitem.buildingType == "GoldMiner":
+					team1goldbldg += 1
 
 			for baseitem in team2bases:
 				if baseitem.buildingType == "Building":
@@ -1332,12 +1344,26 @@ class GameWorld():
 						team2type2 += 1
 					elif baseitem.minionType == miniontypes[2]:
 						team2type3 += 1
+				elif baseitem.buildingType == "Defense":
+					team2tower += 1
+				elif baseitem.buildingType == "AttackBooster":
+					team2attack += 1
+				elif baseitem.buildingType == "GoldMiner":
+					team2goldbldg += 1
 
-			print "TEAM 1: ", team1type1, team1type2, team1type3
-			print "TEAM 2: ", team2type1, team2type2, team2type3
+			#print "TEAM 1: ", team1type1, team1type2, team1type3, team1tower, team1goldbldg, team1attack
+			#print "TEAM 2: ", team2type1, team2type2, team2type3, team2tower, team2goldbldg, team2attack
 
 			if self.gold[1] < 300:
 				return None
+
+			if team2bldgcount <= 3 and team2tower == 0:
+				basetype = 3
+				return basetype
+
+			if team2bldgcount % 3 > team2tower:
+				basetype = 3
+				return basetype
 
 			if (team1type3 - team2type3) >= 2:
 				basetype = 2
@@ -1358,7 +1384,7 @@ class GameWorld():
 			'''elif (team2bldgcount - team1bldgcount) > 5:
 				return None'''
 
-			randval = numpy.random.choice([0, 1, 2], 5, p=[0.5, 0.30, 0.20])
+			randval = numpy.random.choice([0, 1, 2, 3, 4, 5], 5, p=[0.3, 0.15, 0.1, 0.2, 0.1, 0.15])
 			#randval = choice([0, 1, 2], [0.5, 0.3, 0.2])
 			print "RAND VAL: ",randval
 			return randval[3]
@@ -1381,9 +1407,10 @@ class GameWorld():
 		self.gold[0] += 1
 		self.gold[1] += 1
 		self.ai_lastbuilt -= 1
+		buildingtype = [FACTORY1, FACTORY2, FACTORY3, TOWER, MINE, RESOURCE]
 		factories = [FACTORY1, FACTORY2, FACTORY3]
-		miniontypes = [ADCMinion, TankMinion, AoEMinion]
-		costarr = [300, 500, 700]
+		miniontypes = [ADCMinion, TankMinion, AoEWarrior]
+		costarr = [300, 500, 700, 500, 500, 500]
 		if self.ai_lastbuilt == 0:
 			self.ai_lastbuilt = 10
 			if self.lastBuilding == None:
@@ -1397,8 +1424,8 @@ class GameWorld():
 				for basept in basepts:
 					buildpt = findpt(BUILDRADIUS, basept)
 					self.lastBuilding = basetype
-					print "base type1: ",basetype
-					print "ai_gold1: ", self.gold[1]
+					#print "base type1: ",basetype
+					#print "ai_gold1: ", self.gold[1]
 					if basetype == None:
 						return None
 					if self.gold[1] < costarr[basetype]:
@@ -1410,7 +1437,16 @@ class GameWorld():
 						if whilecount > 10:
 							return None
 						canProceed = True'''
-					c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					c3 = None
+					if basetype >= 0 and basetype <=2:
+						c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					elif basetype == 3:
+						c3 = Defense(TOWER, buildpt, self.agent.world, 2)
+					elif basetype == 4:
+						c3 = GoldMiner(MINE, buildpt, self.agent.world, 2)
+					elif basetype == 5:
+						c3 = AttackBooster(RESOURCE, buildpt, self.agent.world, 2)
+
 					lins = c3.getLines()
 					bases = self.getCastlesAndBuildings()
 					linlist = []
@@ -1424,6 +1460,23 @@ class GameWorld():
 								if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
 									canProceed = False
 									#buildpt = findpt(BUILDRADIUS, basept)
+					baselineptlist = []
+					currentlineptlist = []
+					for lin1 in linlist:
+						temp = []
+						for lin in lin1:
+							temp.append(lin[0])
+						baselineptlist.append(temp)
+					for lin2 in lins:
+						currentlineptlist.append(lin2[0])
+					for pt in currentlineptlist:
+						for baseitem in baselineptlist:
+							if point_inside_polygon(pt, baseitem):
+								canProceed = False
+					for baseitem in baselineptlist:
+						for pt in baseitem:
+							if point_inside_polygon(pt, currentlineptlist):
+								canProceed = False
 					if canProceed == False:
 						continue
 					#c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
@@ -1438,12 +1491,13 @@ class GameWorld():
 					#print "LINES: ", c3.getLines()
 					self.addBuilding(c3)
 					self.lastBuilding = None
+					print "BUILDING CONSTRUCTED: ", buildingtype[basetype]
 			elif self.gold[1] >= costarr[self.lastBuilding]:
 				basetype = self.lastBuilding
 				basepts = []
 				bases = self.getCastlesAndBuildingsForTeam(2)
-				print "base type: ", basetype
-				print "ai_gold: ", self.gold[1]
+				#print "base type: ", basetype
+				#print "ai_gold: ", self.gold[1]
 				for bse in bases:
 					basepts.append(bse.getLocation())
 				for basept in basepts:
@@ -1462,7 +1516,16 @@ class GameWorld():
                         if whilecount > 10:
                             return None
                         canProceed = True'''
-					c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					c3 = None
+					if basetype >= 0 and basetype <= 2:
+						c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					elif basetype == 3:
+						c3 = Defense(TOWER, buildpt, self.agent.world, 2)
+					elif basetype == 4:
+						c3 = GoldMiner(MINE, buildpt, self.agent.world, 2)
+					elif basetype == 5:
+						c3 = AttackBooster(RESOURCE, buildpt, self.agent.world, 2)
+
 					lins = c3.getLines()
 					bases = self.getCastlesAndBuildings()
 					linlist = []
@@ -1476,8 +1539,26 @@ class GameWorld():
 								if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
 									canProceed = False
 								# buildpt = findpt(BUILDRADIUS, basept)
+					baselineptlist = []
+					currentlineptlist = []
+					for lin1 in linlist:
+						temp = []
+						for lin in lin1:
+							temp.append(lin[0])
+						baselineptlist.append(temp)
+					for lin2 in lins:
+						currentlineptlist.append(lin2[0])
+					for pt in currentlineptlist:
+						for baseitem in baselineptlist:
+							if point_inside_polygon(pt, baseitem):
+								canProceed = False
+					for baseitem in baselineptlist:
+						for pt in baseitem:
+							if point_inside_polygon(pt, currentlineptlist):
+								canProceed = False
 					if canProceed == False:
 						continue
+
 					#c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
 					if self.gold[1] < costarr[basetype]:
 						return None
@@ -1490,8 +1571,9 @@ class GameWorld():
 					# print "LINES: ", c3.getLines()
 					self.addBuilding(c3)
 					self.lastBuilding = None
+					print "BUILDING CONSTRUCTED: ", buildingtype[basetype]
 			else:
-				print "ai_gold: ", self.gold[1]
+				#print "ai_gold: ", self.gold[1]
 				return None
 		return None
 
