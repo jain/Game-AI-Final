@@ -54,6 +54,29 @@ class CheckEnemyBuilding(BTNode):
 		elif self.buildingType == 6:
 			return self.agent.team2bldgcount > self.buildingThreshold
 
+class CompareNumBuilding(BTNode):
+	def parseArgs(self, args):
+		BTNode.parseArgs(self, args)
+		self.buildingType = 0
+		if len(args) > 0:
+			self.buildingType = args[0]
+	def execute(self, delta = 0):
+		ret = BTNode.execute(self, delta)
+		if self.buildingType == 0:
+			return self.agent.team1type1 < self.agent.team2type1
+		elif self.buildingType == 1:
+			return self.agent.team1type2 < self.agent.team2type2
+		elif self.buildingType == 2:
+			return self.agent.team1type3 < self.agent.team2type3
+		elif self.buildingType == 3:
+			return self.agent.team1tower < self.agent.team2tower
+		elif self.buildingType == 4:
+			return self.agent.team1goldbldg < self.agent.team2goldbldg
+		elif self.buildingType == 5:
+			return self.agent.team1attack < self.agent.team2attack
+		elif self.buildingType == 6:
+			return self.agent.team1bldgcount < self.agent.team2bldgcount
+
 class BuildFactory(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
@@ -114,6 +137,15 @@ treeSpec[4] = [Sequence, BuildMine, BuildTower, (BuildFactory,0), (BuildFactory,
 treeSpec[5] = [Selector, [Sequence, (CheckNumBuilding,4,3), BuildMine], [Sequence, (CheckNumBuilding,3,3), BuildTower], (BuildFactory,0)]
 #build towers if < 3 towers or enemy has > 5 factories, else build factories
 treeSpec[6] = [Selector, [Selector, [Sequence, (CheckNumBuilding,3,3), BuildTower], [Sequence, (CheckEnemyBuilding,6,5), BuildTower] ], (BuildFactory,0)]
+#build 3 mines, then alternate factories
+treeSpec[7] = [Selector, [Sequence, (CheckNumBuilding,4,3), BuildMine], [Sequence, (BuildFactory,0), (BuildFactory,1), (BuildFactory,2)]]
+#build as many mines as the enemy, then build factories
+treeSpec[8] = [Selector, [Sequence, (CompareNumBuilding,4), BuildMine], (BuildFactory,0)]
+#alternate between strategy 6 and 7
+treeSpec[9] = [Sequence, 
+				[Selector, [Selector, [Sequence, (CheckNumBuilding,3,3), BuildTower], [Sequence, (CheckEnemyBuilding,6,5), BuildTower] ], (BuildFactory,0)],
+				[Selector, [Sequence, (CheckNumBuilding,4,3), BuildMine], [Sequence, (BuildFactory,0), (BuildFactory,1), (BuildFactory,2)]]
+			]
 
 class BuildBehavior(BehaviorTree):
 
