@@ -95,8 +95,12 @@ class BaseAI():
 	
 	def findPoint(self, basept, radius):
 		wx, wy = self.world.getDimensions()
-		boundarypoints = [(wx*(1 - PERCENTFIELD), 0), (wx, 0), (wx, wy), (wx*(1 - PERCENTFIELD), wy)]
+		if self.team == 1:
+			boundarypoints = [(0, 0), (wx*PERCENTFIELD, 0), (wx*PERCENTFIELD, wy), (0, wy)]
+		else:
+			boundarypoints = [(wx*(1 - PERCENTFIELD), 0), (wx, 0), (wx, wy), (wx*(1 - PERCENTFIELD), wy)]
 		boundarylines = [(boundarypoints[x%4], boundarypoints[(x+1)%4]) for x in xrange(4)]
+		count = 0
 		while True:
 			x = basept[0] + random.random()*2*radius - radius
 			y = basept[1] + random.random()*2*radius - radius
