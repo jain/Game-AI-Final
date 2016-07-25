@@ -10,6 +10,7 @@ from astarnavigator import *
 from clonenav import *
 
 
+
 BUILDRATE = 180
 TOWERFIRERATE = 15
 BASEFIRERATE = 15
@@ -136,6 +137,7 @@ class CastleBase(Mover):
 		self.canfire = True
 		self.bulletclass = bulletclass
 		self.buildingType = "Castle"
+		self.type = 'c'
 
 	def getLines(self):
 		p1 = self.rect.topleft
@@ -267,12 +269,18 @@ class Building(Mover):
 class Spawner(Building):
 	def __init__(self, image, position, world, team=None, minionType=Minion, buildrate=BUILDRATE, hitpoints=SPAWNERHITPOINTS):
 		Building.__init__(self, image, position, world, team, hitpoints)
+		from Minions import TankMinion, ADCMinion
 		self.buildTimer = buildrate
 		self.buildRate = buildrate
 		self.minionType = minionType
 		self.numSpawned = 0
 		self.buildingType = "Spawner"
-	
+		if minionType == TankMinion:
+			self.type = 'tank'
+		elif minionType == ADCMinion:
+			self.type = 'adc'
+		else:
+			self.type = 'aoe'
 	### Spawn an agent.
 	### type: name of agent class. Must be RTSAgent or subclass thereof
 	### angle: specifies where around the base the agent will be spawned
@@ -315,6 +323,7 @@ class Defense(Building):
 		self.canfire = False
 		self.bulletclass = bulletclass
 		self.buildingType = "Defense"
+		self.type = 'd'
 	
 	def shoot(self):
 		if self.canfire:
@@ -359,6 +368,7 @@ class GoldMiner(Building):
 		self.goldRate = goldRate
 		self.goldPerCycle = goldPerCycle
 		self.buildingType = "GoldMiner"
+		self.type = 'g'
 	
 	def update(self, delta):
 		Building.update(self, delta)
@@ -374,6 +384,7 @@ class AttackBooster(Building):
         Building.__init__(self, image, position, world, team, hitpoints)
         self.boostType = boostType
         self.attackModifier = attackModifier
+        self.type = 'a'
         self.buildingType = "AttackBooster"
 
     def boostAttack(self, baseAttack):

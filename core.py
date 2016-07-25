@@ -26,6 +26,7 @@ import math
 #from vector import *
 import bisect
 import collections
+from RLCsv import RLCsv
 #
 
 ###########################
@@ -889,6 +890,7 @@ class GameWorld():
 		self.font = pygame.font.Font(None,50)
 		self.lastBuilding = None
 		self.damagepts = [0, 0]
+		self.rl = RLCsv()
 
 	def getPoints(self):
 		return self.points
@@ -1100,22 +1102,22 @@ class GameWorld():
 			poly = [(loc[0]-offs, loc[1]-offs),(loc[0]+offs, loc[1]-offs),(loc[0]+offs, loc[1]+offs),(loc[0]-offs, loc[1]+offs)]
 			#core_CreateBuilding1(loc)
 			if key==101:
-				cost = 300
+				cost = 600
 				c3 = Spawner(FACTORY1, loc, self.agent.world, 1, ADCMinion)
 			elif key==102:
-				cost = 500
+				cost = 1000
 				c3 = Spawner(FACTORY2, loc, self.agent.world, 1, TankMinion)
 			elif key==103:
-				cost = 700
+				cost = 1400
 				c3 = Spawner(FACTORY3, loc, self.agent.world, 1, AoEWarrior)
 			elif key==104:
-				cost = 500
+				cost = 1000
 				c3 = Defense(TOWER, loc, self.agent.world, 1)
 			elif key==105:
-				cost = 500
+				cost = 1000
 				c3 = GoldMiner(MINE, loc, self.agent.world, 1)
 			elif key==106:
-				cost = 500
+				cost = 1000
 				c3 = AttackBooster(RESOURCE, loc, self.agent.world, 1)
 			if cost > self.gold[0]:
 				print 'NOT ENOUGH GOLD'
@@ -1186,7 +1188,8 @@ class GameWorld():
 	def update(self, delta):
 
 		print "AI GOLD: ", self.gold[1]
-		print "DAMAGE DONE BY AI", self.damagepts[0]
+		print "DAMAGE DONE BY AI",
+		
 		from Castle import Building, Spawner, Defense, GoldMiner, AttackBooster
 		from MyMinion import MyMinion
 		from moba2 import SmallBullet, BigBullet, BaseBullet
@@ -1388,30 +1391,94 @@ class GameWorld():
 			#randval = choice([0, 1, 2], [0.5, 0.3, 0.2])
 			print "RAND VAL: ",randval
 			return randval[3]
-			'''
-			max = team1type1
-			basetype = 0
-			if team1type2 > max and self.gold[1] >= 500:
-				max = team1type2
-				basetype = 1
-			if team1type3 > max and self.gold[1] >= 700:
-				max = team1type3
-				basetype = 2
-			if max == 0:
-				arr = [FACTORY1, FACTORY2, FACTORY3]
-				max = random.randint(0,2)
-				basetype = max
-			return basetype'''
 		self.clock = self.clock + delta
 		self.worldCollisionTest()
 		self.gold[0] += 1
 		self.gold[1] += 1
 		self.ai_lastbuilt -= 1
+		if self.gold[1] < 600:
+			return None
 		buildingtype = [FACTORY1, FACTORY2, FACTORY3, TOWER, MINE, RESOURCE]
 		factories = [FACTORY1, FACTORY2, FACTORY3]
 		miniontypes = [ADCMinion, TankMinion, AoEWarrior]
-		costarr = [300, 500, 700, 500, 500, 500]
-		if self.ai_lastbuilt == 0:
+		costarr = [600, 1000, 1400, 1000, 1000, 1000]
+		basepts = []
+		bases = self.getCastlesAndBuildingsForTeam(2)
+		team1bases = self.getCastlesAndBuildingsForTeam(1)
+		team2bases = self.getCastlesAndBuildingsForTeam(2)
+		team1BaseTypes = []
+		team2BaseTypes = []
+
+		for bs in team1bases:
+			team1BaseTypes.append(bs.type)
+		for bs in team2bases:
+			team2BaseTypes.append(bs.type)
+		# print "AI GOLD: ", self.gold[1]
+		basetype = self.rl.query(team1BaseTypes, team2BaseTypes, self.gold)
+		for bse in bases:
+			basepts.append(bse.getLocation())
+		for basept in basepts:
+			buildpt = findpt(BUILDRADIUS, basept)
+			if basetype == None:
+				return None
+			if self.gold[1] < costarr[basetype]:
+				return None
+			canProceed = True
+			if basetype >= 0 and basetype <= 2:
+				c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+			elif basetype == 3:
+				c3 = Defense(TOWER, buildpt, self.agent.world, 2)
+			elif basetype == 4:
+				c3 = GoldMiner(MINE, buildpt, self.agent.world, 2)
+			elif basetype == 5:
+				c3 = AttackBooster(RESOURCE, buildpt, self.agent.world, 2)
+
+			lins = c3.getLines()
+			bases = self.getCastlesAndBuildings()
+			linlist = []
+			for baseitem in bases:
+				linlist.append(baseitem.getLines())
+			# if lins in linlist:
+			#	linlist.remove(lins)
+			for lin1 in linlist:
+				for lin in lin1:
+					for lin2 in lins:
+						if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
+							canProceed = False
+						# buildpt = findpt(BUILDRADIUS, basept)
+			baselineptlist = []
+			currentlineptlist = []
+			for lin1 in linlist:
+				temp = []
+				for lin in lin1:
+					temp.append(lin[0])
+				baselineptlist.append(temp)
+			for lin2 in lins:
+				currentlineptlist.append(lin2[0])
+			for pt in currentlineptlist:
+				for baseitem in baselineptlist:
+					if point_inside_polygon(pt, baseitem):
+						canProceed = False
+			for baseitem in baselineptlist:
+				for pt in baseitem:
+					if point_inside_polygon(pt, currentlineptlist):
+						canProceed = False
+			if canProceed == False:
+				continue
+			# c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+			if self.gold[1] < costarr[basetype]:
+				return None
+			self.gold[1] -= costarr[basetype]
+			# self.lines += lins
+			nav = AStarNavigator()
+			nav.agent = self.agent
+			nav.setWorld(self.agent.world)
+			c3.setNavigator(nav)
+			# print "LINES: ", c3.getLines()
+			self.addBuilding(c3)
+			self.lastBuilding = None
+			print "BUILDING CONSTRUCTED: ", buildingtype[basetype]
+		'''if self.ai_lastbuilt == 0:
 			self.ai_lastbuilt = 10
 			if self.lastBuilding == None:
 				basepts = []
@@ -1432,11 +1499,6 @@ class GameWorld():
 						return None
 					canProceed = True
 					whilecount = 0
-					'''while canProceed == False:
-						whilecount += 1
-						if whilecount > 10:
-							return None
-						canProceed = True'''
 					c3 = None
 					if basetype >= 0 and basetype <=2:
 						c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
@@ -1511,11 +1573,6 @@ class GameWorld():
 						return None
 					canProceed = True
 					whilecount = 0
-					'''while canProceed == False:
-                        whilecount += 1
-                        if whilecount > 10:
-                            return None
-                        canProceed = True'''
 					c3 = None
 					if basetype >= 0 and basetype <= 2:
 						c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
@@ -1574,7 +1631,8 @@ class GameWorld():
 					print "BUILDING CONSTRUCTED: ", buildingtype[basetype]
 			else:
 				#print "ai_gold: ", self.gold[1]
-				return None
+				return None'''
+
 		return None
 
 
