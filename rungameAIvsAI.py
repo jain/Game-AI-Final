@@ -29,6 +29,7 @@ from MyHero import *
 from clonenav import *
 from Castle import *
 from AI import *
+from buildBehaviors import *
 
 ############################
 ### How to use this file
@@ -57,7 +58,9 @@ obstacles = obstacles + mirror
 ########################
 world = MOBAWorld(SEED, dims, dims, 0, 60)
 p1 = BaseAI(world, 1)
+p1.behaviorTree = BuildBehavior(world,1,10)
 p2 = BaseAI(world, 2)
+p2.behaviorTree = BuildBehavior(world,2,1)
 world.setP1(p1)
 world.setP2(p2)
 agent = GhostAgent(ELITE, (x/2, y), 0, SPEED, world)

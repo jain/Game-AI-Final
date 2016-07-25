@@ -1,4 +1,5 @@
 
+import random
 from behaviortree import *
 from Minions import TankMinion, ADCMinion, AoEMinion, AoEWarrior
 
@@ -77,6 +78,16 @@ class CompareNumBuilding(BTNode):
 		elif self.buildingType == 6:
 			return self.agent.team1bldgcount < self.agent.team2bldgcount
 
+class Randomize(BTNode):
+	def parseArgs(self, args):
+		BTNode.parseArgs(self, args)
+		self.chance = 1
+		if len(args) > 0:
+			self.chance = args[0]
+	def execute(self, delta = 0):
+		ret = BTNode.execute(self, delta)
+		return random.random() < self.chance
+
 class BuildFactory(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
@@ -126,7 +137,7 @@ class BuildBooster(BTNode):
 		else:
 			return None
 
-treeSpec = [None] * 10
+treeSpec = [None] * 15
 #just loop over build sequences
 treeSpec[0] = [Sequence, (BuildFactory,0), BuildBooster]
 treeSpec[1] = [Sequence, BuildMine, (BuildFactory,0)]
@@ -146,6 +157,8 @@ treeSpec[9] = [Sequence,
 				[Selector, [Selector, [Sequence, (CheckNumBuilding,3,3), BuildTower], [Sequence, (CheckEnemyBuilding,6,5), BuildTower] ], (BuildFactory,0)],
 				[Selector, [Sequence, (CheckNumBuilding,4,3), BuildMine], [Sequence, (BuildFactory,0), (BuildFactory,1), (BuildFactory,2)]]
 			]
+#randomize between factories
+treeSpec[10] = [Selector, [Sequence, (Randomize,0.5), (BuildFactory,0)], [Sequence, (Randomize,0.3), (BuildFactory,1)], (BuildFactory,2)]
 
 class BuildBehavior(BehaviorTree):
 
