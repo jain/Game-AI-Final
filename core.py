@@ -220,7 +220,7 @@ class Bullet(Mover):
 			return False
 
 	def damageCaused(self, damager, damagee, amount):
-		from Minions import TankMinion, ADCMinion, AoEMinion
+		from Minions import TankMinion, ADCMinion, AoEMinion, AoEWarrior
 		#print "DAMAGE CAUSED"
 		if isinstance(damager, Agent) and isinstance(damagee, ADCMinion) and damagee.isAlive() == False:
 			self.addToGold(damager.getTeam(), ADCMINION_KILL)
@@ -228,6 +228,8 @@ class Bullet(Mover):
 			self.addToGold(damager.getTeam(), TANKMINION_KILL)
 		if isinstance(damager, Agent) and isinstance(damagee, AoEMinion) and damagee.isAlive() == False:
 			self.addToGold(damager.getTeam(), AOEMINION_KILL)
+		if isinstance(damager, Agent) and isinstance(damagee, AoEWarrior) and damagee.isAlive() == False:
+			self.addToGold(damager.getTeam(), AOEWARRIOR_KILL)
 
 	def addToGold(self, team, amount):
 		self.world.gold[team - 1] += amount
@@ -1057,7 +1059,7 @@ class GameWorld():
 			from MyMinion import MyMinion
 			from moba2 import SmallBullet,BigBullet,BaseBullet
 			from astarnavigator import AStarNavigator
-			from Minions import TankMinion, ADCMinion, AoEMinion, StandardBullet, MeleeBullet, AoEBullet
+			from Minions import TankMinion, ADCMinion, AoEMinion, AoEWarrior, StandardBullet, MeleeBullet, AoEBullet, AoEWave
 			#class MyHumanMinion(MyMinion):
 			#	def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
 			#				 hitpoints=HITPOINTS,
@@ -1092,7 +1094,7 @@ class GameWorld():
 				c3 = Spawner(FACTORY2, loc, self.agent.world, 1, TankMinion)
 			elif key==103:
 				cost = 700
-				c3 = Spawner(FACTORY3, loc, self.agent.world, 1, AoEMinion)
+				c3 = Spawner(FACTORY3, loc, self.agent.world, 1, AoEWarrior)
 			elif key==104:
 				cost = 500
 				c3 = Defense(TOWER, loc, self.agent.world, 1)
@@ -1173,7 +1175,7 @@ class GameWorld():
 		from MyMinion import MyMinion
 		from moba2 import SmallBullet, BigBullet, BaseBullet
 		from astarnavigator import AStarNavigator
-		from Minions import TankMinion, ADCMinion, AoEMinion, StandardBullet, MeleeBullet, AoEBullet
+		from Minions import TankMinion, ADCMinion, AoEMinion, AoEWarrior, StandardBullet, MeleeBullet, AoEBullet, AoEWave
 		#class MyHumanMinion(MyMinion):
 		#	def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
 		#				 hitpoints=HITPOINTS,
@@ -1297,7 +1299,7 @@ class GameWorld():
 					canProceed = True
 					return (x,y)
 		def findBaseToBuild(team1bases, team2bases):
-			miniontypes = [ADCMinion, TankMinion, AoEMinion]
+			miniontypes = [ADCMinion, TankMinion, AoEWarrior]
 			team1type1 = 0
 			team1type2 = 0
 			team1type3 = 0

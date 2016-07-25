@@ -58,8 +58,15 @@ BULLET_C = "sprites/bullet2.gif"
 BULLETSPEED_C = (15, 15)
 BULLETDAMAGE_C = 5
 BULLETRANGE_C = 250
-AREAEFFECTDAMAGE_C = 10
 AREAEFFECTRANGE_C = 50
+
+## MINION D'S CONSTANTS ##
+SPEED_D = (2, 2)
+HITPOINTS_D = 50
+FIRERATE_D = 100
+BULLET_D = "sprites/bullet2.gif"
+BULLETDAMAGE_D = 10
+BULLETRANGE_D = 50
 
 ############################
 
@@ -326,9 +333,29 @@ class AoEBullet(MOBABullet):
 	def explode(self):
 		pygame.draw.circle(self.world.background, (255, 0, 0), (int(self.getLocation()[0]), int(self.getLocation()[1])), AREAEFFECTRANGE_C, 1)
 		team = self.owner.getTeam()
-		for x in self.world.getEnemyNPCs(team) + self.world.getEnemyBases(team) + self.world.getEnemyTowers(team):
-			if withinRange(self.getLocation(), x.getLocation(), AREAEFFECTRANGE_C):
-				x.damage(AREAEFFECTDAMAGE_C)
+		for thing in self.world.getEnemyNPCs(team) + self.world.getEnemyCastles(team) + self.world.getEnemyBuildings(team):
+			if withinRange(self.getLocation(), thing.getLocation(), AREAEFFECTRANGE_C):
+				self.hit(thing)
+
+class AoEWave(AoEBullet):
+	def __init__(self, position, orientation, world, image=BULLET_D, speed=(0, 0),
+				 damage=BULLETDAMAGE_D, range=BULLETRANGE_D):
+		AoEBullet.__init__(self, position, orientation, world, image, speed, damage, range)
+
+	def update(self, delta):
+		Bullet.update(self, delta)
+		self.explode()
+		self.world.deleteBullet(self)
+
+	def collision(self, thing):
+		Bullet.collision(self, thing)
+	
+	def explode(self):
+		pygame.draw.circle(self.world.background, (255, 0, 0), (int(self.getLocation()[0]), int(self.getLocation()[1])), self.range, 1)
+		team = self.owner.getTeam()
+		for thing in self.world.getEnemyNPCs(team) + self.world.getEnemyCastles(team) + self.world.getEnemyBuildings(team):
+			if withinRange(self.getLocation(), thing.getLocation(), self.range):
+				self.hit(thing)
 
 
 ############################
@@ -354,4 +381,9 @@ class ADCMinion(BaseMinion):
 class AoEMinion(BaseMinion):
     def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED_C, viewangle=360, hitpoints=HITPOINTS_C,
                  firerate=FIRERATE_C, bulletclass=AoEBullet, attackorder = ATTACKORDER_B):
+        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackorder)
+
+class AoEWarrior(BaseMinion):
+    def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED_D, viewangle=360, hitpoints=HITPOINTS_D,
+                 firerate=FIRERATE_D, bulletclass=AoEWave, attackorder = ATTACKORDER_B):
         BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackorder)
