@@ -71,7 +71,7 @@ class MyAlienMinion(MyMinion):
 
 ########################
 world = MOBAWorld(SEED, dims, dims, 0, 60)
-agent = GhostAgent(ELITE, (600, 500), 0, SPEED, world)
+agent = GhostAgent(ELITE, (x/4, y/2), 0, SPEED, world)
 #agent = Hero((600, 500), 0, world, ELITE)
 world.setPlayerAgent(agent)
 world.initializeTerrain(obstacles, (0, 0, 0), 4)

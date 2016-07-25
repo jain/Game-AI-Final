@@ -27,6 +27,10 @@ BASEBULLET = "sprites/bullet2.gif"
 SPAWNNUM = 1
 MAXSPAWN = 20
 
+GOLDRATE = 40
+GOLDPERCYCLE = 50
+DEFAULTBOOSTTYPE = 0
+ATTACKMOD = 3
 
 
 class MOBABullet(Bullet):
@@ -55,13 +59,18 @@ class MOBABullet(Bullet):
 		if ret:
 			return True
 		elif isinstance(thing, Building) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
-			thing.damage(self.damage)
+			thing.damage(self.getDamage())
 			return True
 		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
-			thing.damage(self.damage)
+			thing.damage(self.getDamage())
 			return True
 		else:
 			return False
+
+class TowerBullet(MOBABullet):
+	
+	def __init__(self, position, orientation, world):
+		MOBABullet.__init__(self, position, orientation, world, TOWERBULLET, TOWERBULLETSPEED, TOWERBULLETDAMAGE, TOWERBULLETRANGE)
 
 
 class BaseBullet(MOBABullet):
@@ -164,7 +173,7 @@ class CastleBase(Mover):
 						if isinstance(npc, Minion):
 							minions.append(npc)
 						'''elif isinstance(npc, Hero):
-                            heros.append(npc)'''
+						heros.append(npc)'''
 			minions = sorted(minions, key=lambda x: distance(self.getLocation(), x.getLocation()))
 			heros = sorted(heros, key=lambda x: distance(self.getLocation(), x.getLocation()))
 			targets = minions + heros
@@ -193,31 +202,27 @@ class CastleBase(Mover):
 	def collision(self, thing):
 		Mover.collision(self, thing)
 		'''if isinstance(thing, Hero):
-            agent = thing
-            if agent.getTeam() == self.getTeam():
-                # Heal
-                agent.hitpoints = agent.maxHitpoints'''
+			agent = thing
+			if agent.getTeam() == self.getTeam():
+				# Heal
+				agent.hitpoints = agent.maxHitpoints'''
 
 	def getHitpoints(self):
 		return self.hitpoints
 
-class Building(Mover):
+##############################
 
-	def __init__(self, image, position, world, team=None, minionType=Minion, buildrate=BUILDRATE, hitpoints=BASEHITPOINTS,
-				 firerate=BASEFIRERATE, bulletclass=BaseBullet):
+# BASIC BUILDING CLASS
+
+##############################
+
+class Building(Mover):
+	def __init__(self, image, position, world, team=None, hitpoints=TOWERHITPOINTS):
 		Mover.__init__(self, image, position, 0, 0, world)
 		self.team = team
 		self.hitpoints = hitpoints
 		self.maxHitpoints = hitpoints
-		self.buildTimer = buildrate
-		self.buildRate = buildrate
-		self.nav = None
-		self.minionType = minionType
-		self.firerate = firerate
-		self.firetimer = 0
-		self.canfire = False
-		self.bulletclass = bulletclass
-		self.numSpawned = 0
+		self.minionType = None
 		self.buildingType = "Building"
 
 	def getLines(self):
@@ -227,19 +232,51 @@ class Building(Mover):
 		p4 = self.rect.bottomleft
 		return ((p1,p2),(p2,p3),(p3,p4),(p4,p1))
 
-
 	def setNavigator(self, nav):
 		self.nav = nav
-
 
 	def getTeam(self):
 		return self.team
 
-
 	def setTeam(self, team):
 		self.team = team
 
+	def update(self, delta):
+		Mover.update(self, delta)
 
+	def damage(self, amount):
+		if len(self.world.getTowersForTeam(self.getTeam())) == 0:
+			self.hitpoints = self.hitpoints - amount
+			if self.hitpoints <= 0:
+				self.die()
+
+	def die(self):
+		Mover.die(self)
+		print "building dies", self
+		self.world.deleteBuilding(self)
+
+	def collision(self, thing):
+		Mover.collision(self, thing)
+
+	def getHitpoints(self):
+		return self.hitpoints
+
+
+##############################
+
+# BUILDING SUBCLASSES
+
+##############################
+
+class Spawner(Building):
+	def __init__(self, image, position, world, team=None, minionType=Minion, buildrate=BUILDRATE, hitpoints=SPAWNERHITPOINTS):
+		Building.__init__(self, image, position, world, team, hitpoints)
+		self.buildTimer = buildrate
+		self.buildRate = buildrate
+		self.minionType = minionType
+		self.numSpawned = 0
+		self.buildingType = "Spawner"
+	
 	### Spawn an agent.
 	### type: name of agent class. Must be RTSAgent or subclass thereof
 	### angle: specifies where around the base the agent will be spawned
@@ -262,10 +299,9 @@ class Building(Mover):
 			self.world.addNPC(agent)
 			agent.start()
 		return agent
-
-
+	
 	def update(self, delta):
-		Mover.update(self, delta)
+		Building.update(self, delta)
 		self.buildTimer = self.buildTimer + 1
 		if self.buildTimer >= self.buildRate:
 			for x in range(SPAWNNUM):
@@ -275,37 +311,75 @@ class Building(Mover):
 
 
 
-	def damage(self, amount):
-		if len(self.world.getTowersForTeam(self.getTeam())) == 0:
-			self.hitpoints = self.hitpoints - amount
-			if self.hitpoints <= 0:
-				self.die()
-
-
-	def die(self):
-		Mover.die(self)
-		print "building dies", self
-		self.world.deleteBuilding(self)
-
-
+class Defense(Building):
+	def __init__(self, image, position, world, team=None, firerate=BASEFIRERATE, bulletclass=TowerBullet, hitpoints=DEFENSEHITPOINTS):
+		Building.__init__(self, image, position, world, team, hitpoints)
+		self.firerate = firerate
+		self.firetimer = 0
+		self.canfire = False
+		self.bulletclass = bulletclass
+		self.buildingType = "Defense"
+	
 	def shoot(self):
 		if self.canfire:
 			bullet = self.bulletclass(self.rect.center, self.orientation, self.world)
 			bullet.setOwner(self)
 			self.world.addBullet(bullet)
 			self.canfire = False
+	
+	def update(self, delta):
+		Building.update(self, delta)
+		if self.canfire == False:
+			self.firetimer = self.firetimer + 1
+			if self.firetimer >= self.firerate:
+				self.canfire = True
+				self.firetimer = 0
+		if self.canfire and len(self.world.getTowersForTeam(self.getTeam())) == 0:
+			targets = []
+			minions = []
+			heros = []
+			for npc in self.world.npcs + [self.world.agent]:
+				if npc.getTeam() == None or npc.getTeam() != self.getTeam() and distance(self.getLocation(),
+																						 npc.getLocation()) < BASEBULLETRANGE:
+					hit = rayTraceWorld(self.getLocation(), npc.getLocation(), self.world.getLines())
+					if hit == None:
+						if isinstance(npc, Minion):
+							minions.append(npc)
+						'''elif isinstance(npc, Hero):
+						heros.append(npc)'''
+			minions = sorted(minions, key=lambda x: distance(self.getLocation(), x.getLocation()))
+			heros = sorted(heros, key=lambda x: distance(self.getLocation(), x.getLocation()))
+			targets = minions + heros
+			if len(targets) > 0:
+				self.turnToFace(targets[0].getLocation())
+				self.shoot()
 
 
-	def collision(self, thing):
-		Mover.collision(self, thing)
-		'''if isinstance(thing, Hero):
-			agent = thing
-			if agent.getTeam() == self.getTeam():
-				# Heal
-				agent.hitpoints = agent.maxHitpoints'''
+
+class GoldMiner(Building):
+	def __init__(self, image, position, world, team=None, goldRate=GOLDRATE, goldPerCycle=GOLDPERCYCLE, hitpoints=SUPPORTHITPOINTS):
+		Building.__init__(self, image, position, world, team, hitpoints)
+		self.goldTimer = 0
+		self.goldRate = goldRate
+		self.goldPerCycle = goldPerCycle
+	
+	def update(self, delta):
+		Building.update(self, delta)
+		self.goldTimer = self.goldTimer + 1
+		if self.goldTimer >= self.goldRate:
+			self.world.gold[self.team - 1] += self.goldPerCycle
+			self.goldTimer = 0
 
 
-	def getHitpoints(self):
-		return self.hitpoints
 
-
+class AttackBooster(Building):
+	def __init__(self, image, position, world, team=None, boostType=DEFAULTBOOSTTYPE, attackModifier=ATTACKMOD, hitpoints=SUPPORTHITPOINTS):
+		Building.__init__(self, image, position, world, team, hitpoints)
+		self.boostType = boostType
+		self.attackModifier = attackModifier
+	
+	def boostAttack(self, baseAttack):
+		if self.boostType == 0: # Add modifier to base attack
+			return baseAttack + self.attackModifier
+		else: # Multiply base attack by modifier
+			return baseAttack*self.attackModifier

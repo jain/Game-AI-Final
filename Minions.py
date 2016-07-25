@@ -28,9 +28,9 @@ from math import *
 ## BASEMINION'S CONSTANTS ##
 GROUPING_RANGE = 200
 ALIGNMENT_WEIGHT = 4
-COHESION_WEIGHT = 6
-SEPARATION_WEIGHT = 24
-INFLUENCE_PERCENT = 0.33
+COHESION_WEIGHT = 12
+SEPARATION_WEIGHT = 12
+INFLUENCE_PERCENT = 0.5
 
 ## MINION A'S CONSTANTS ##
 SPEED_A = (5, 5)
@@ -104,7 +104,7 @@ class BaseMinion(Minion):
         v = numpy.divide(v, len(nearby))
         # Find difference from self position, return normalized vector
         v = numpy.subtract(v, self.getLocation())
-        #v = numpy.divide(v, vectorMagnitude(v))
+        v = numpy.divide(v, vectorMagnitude(v))
         return v
     
     def getSeparationVector(self, nearby):
@@ -119,7 +119,7 @@ class BaseMinion(Minion):
         #v = numpy.subtract(v, self.getLocation())
         # Find opposite vector and return normalization of it
         v = numpy.multiply(v, -1)
-        #v = numpy.divide(v, vectorMagnitude(v))
+        v = numpy.divide(v, vectorMagnitude(v))
         return v
     
     def getInfluenceVector(self):
@@ -135,8 +135,7 @@ class BaseMinion(Minion):
         v = numpy.add(numpy.multiply(a, ALIGNMENT_WEIGHT), numpy.multiply(c, COHESION_WEIGHT))
         v = numpy.add(v, numpy.multiply(s, SEPARATION_WEIGHT))
         # Normalize if able and return the vector
-        if vectorMagnitude(v) != 0:
-            v = numpy.divide(v, vectorMagnitude(v))
+        v = numpy.divide(v, ALIGNMENT_WEIGHT + COHESION_WEIGHT + SEPARATION_WEIGHT)
         v = [m*n*INFLUENCE_PERCENT for m,n in zip(v, self.speed)]
         return v
 

@@ -23,7 +23,7 @@ from constants import *
 from utils import *
 import random
 import math
-from vector import *
+#from vector import *
 import bisect
 import collections
 #
@@ -181,8 +181,13 @@ class Bullet(Mover):
 		self.distanceTraveled = 0
 		
 	def getDamage(self):
-		return self.damage
-		
+		from Castle import AttackBooster
+		x = self.damage
+		boosters = [n for n in self.world.getBuildingsForTeam(self.owner.getTeam()) if isinstance(n, AttackBooster)]
+		for booster in boosters:
+			x = booster.boostAttack(x)
+		return x
+	
 	### Update the agent every tick. Primarily does movement
 	def update(self, delta):
 		Mover.update(self, delta)
@@ -204,10 +209,10 @@ class Bullet(Mover):
 
 	### Hit verifies that it has hit something hitable and what it should do (e.g., cause damage) 
 	def hit(self, thing):
-
 		if thing != self.owner and isinstance(thing, Agent) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
-			thing.damage(self.damage)
-			self.damageCaused(self.owner, thing, self.damage)
+			dmg = self.getDamage()
+			thing.damage(dmg)
+			self.damageCaused(self.owner, thing, dmg)
 			return True
 		elif isinstance(thing, Obstacle) or isinstance(thing, Gate) or self.position[0] < 0 or self.position[0] > self.world.dimensions[0] or self.position[1] < 0 or self.position[1] > self.world.dimensions[1]:
 			return True
@@ -216,7 +221,6 @@ class Bullet(Mover):
 
 	def damageCaused(self, damager, damagee, amount):
 		from Minions import TankMinion, ADCMinion, AoEMinion
-		from BaseMinion import *
 		#print "DAMAGE CAUSED"
 		if isinstance(damager, Agent) and isinstance(damagee, ADCMinion) and damagee.isAlive() == False:
 			self.addToGold(damager.getTeam(), ADCMINION_KILL)
@@ -226,13 +230,7 @@ class Bullet(Mover):
 			self.addToGold(damager.getTeam(), AOEMINION_KILL)
 
 	def addToGold(self, team, amount):
-		#print "ADD GOLD"
-		if team == 1:
-			self.world.my_gold += amount
-		elif team == 2:
-			self.world.ai_gold += amount
-				
-				
+		self.world.gold[team - 1] += amount
 
 
 ###########################
@@ -872,8 +870,7 @@ class GameWorld():
 		self.camera = [0, 0]
 		# unobstructed places
 		self.destinations = {}
-		self.my_gold = 1000
-		self.ai_gold = 1000
+		self.gold = [1000, 1000]
 		self.ai_lastbuilt = 5
 		self.font = pygame.font.Font(None,50)
 		self.lastBuilding = None
@@ -1012,8 +1009,8 @@ class GameWorld():
 		for m in self.movers:
 			if hasattr(m,'maxHitpoints'):
 				self.drawHealthBar(m)
-		self.screen.blit(self.font.render('Gold: '+str(self.my_gold),0,(185,185,0)),(0,0))
-		self.screen.blit(self.font.render('Gold: '+str(self.ai_gold),0,(185,185,0)),(self.dimensions[0]-200,0))
+		self.screen.blit(self.font.render('Gold: '+str(self.gold[0]),0,(185,185,0)),(0,0))
+		self.screen.blit(self.font.render('Gold: '+str(self.gold[1]),0,(185,185,0)),(self.dimensions[0]-200,0))
 		#pygame.display.flip()
 		
 	def drawHealthBar(self,m):
@@ -1054,46 +1051,58 @@ class GameWorld():
 			self.agent.shoot()
 		elif key == 100: #d
 			print "distance traveled", self.agent.distanceTraveled
-		elif key >= 101 and key <= 103:  # e-g
+		elif key >= 101 and key <= 106:  # e-j
 			#from rungame import core_CreateBuilding1
-			from Castle import Building
+			from Castle import Building, Spawner, Defense, GoldMiner, AttackBooster
 			from MyMinion import MyMinion
 			from moba2 import SmallBullet,BigBullet,BaseBullet
 			from astarnavigator import AStarNavigator
 			from Minions import TankMinion, ADCMinion, AoEMinion, StandardBullet, MeleeBullet, AoEBullet
-			class MyHumanMinion(MyMinion):
-				def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
-							 hitpoints=HITPOINTS,
-							 firerate=FIRERATE, bulletclass=SmallBullet):
-					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-									  bulletclass)
-
-			class MyAlienMinion(MyMinion):
-				def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
-							 hitpoints=HITPOINTS*2,
-							 firerate=FIRERATE, bulletclass=BaseBullet):
-					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-									  bulletclass)
-			class MyEliteMinion(MyMinion):
-				def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
-							 hitpoints=HITPOINTS*3,
-							 firerate=FIRERATE, bulletclass=BigBullet):
-					MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-									  bulletclass)
+			#class MyHumanMinion(MyMinion):
+			#	def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
+			#				 hitpoints=HITPOINTS,
+			#				 firerate=FIRERATE, bulletclass=SmallBullet):
+			#		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+			#						  bulletclass)
+			#
+			#class MyAlienMinion(MyMinion):
+			#	def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
+			#				 hitpoints=HITPOINTS*2,
+			#				 firerate=FIRERATE, bulletclass=BaseBullet):
+			#		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+			#						  bulletclass)
+			#class MyEliteMinion(MyMinion):
+			#	def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
+			#				 hitpoints=HITPOINTS*3,
+			#				 firerate=FIRERATE, bulletclass=BigBullet):
+			#		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+			#						  bulletclass)
 			loc = self.agent.getLocation()
-			offs = 20
+			offs = OFFSET
+			if loc[0] < offs or loc[0] > self.dimensions[0]*PERCENTFIELD - offs or loc[1] < offs or loc[1] > self.dimensions[1] - offs:
+				print 'U CANT BUILD HERE'
+				return
 			poly = [(loc[0]-offs, loc[1]-offs),(loc[0]+offs, loc[1]-offs),(loc[0]+offs, loc[1]+offs),(loc[0]-offs, loc[1]+offs)]
 			#core_CreateBuilding1(loc)
 			if key==101:
 				cost = 300
-				c3 = Building(FACTORY1, loc, self.agent.world, 1, ADCMinion)
+				c3 = Spawner(FACTORY1, loc, self.agent.world, 1, ADCMinion)
 			elif key==102:
 				cost = 500
-				c3 = Building(FACTORY2, loc, self.agent.world, 1, TankMinion)
+				c3 = Spawner(FACTORY2, loc, self.agent.world, 1, TankMinion)
 			elif key==103:
 				cost = 700
-				c3 = Building(FACTORY3, loc, self.agent.world, 1, AoEMinion)
-			if cost > self.my_gold:
+				c3 = Spawner(FACTORY3, loc, self.agent.world, 1, AoEMinion)
+			elif key==104:
+				cost = 500
+				c3 = Defense(TOWER, loc, self.agent.world, 1)
+			elif key==105:
+				cost = 500
+				c3 = GoldMiner(MINE, loc, self.agent.world, 1)
+			elif key==106:
+				cost = 500
+				c3 = AttackBooster(RESOURCE, loc, self.agent.world, 1)
+			if cost > self.gold[0]:
 				print 'NOT ENOUGH GOLD'
 				return
 
@@ -1108,9 +1117,9 @@ class GameWorld():
 				for lin in lin1:
 					for lin2 in lins:
 						if calculateIntersectPoint(lin[0], lin[1], lin2[0], lin2[1]):
-							print 'U CANT BUILD THERE'
+							print 'U CANT BUILD HERE'
 							return
-			self.my_gold -= cost
+			self.gold[0] -= cost
 			#self.lines += lins
 			nav = AStarNavigator()
 			nav.agent = self.agent
@@ -1160,31 +1169,31 @@ class GameWorld():
 			c[1].collision(c[0])
 		
 	def update(self, delta):
-		from Castle import Building
+		from Castle import Building, Spawner, Defense, GoldMiner, AttackBooster
 		from MyMinion import MyMinion
 		from moba2 import SmallBullet, BigBullet, BaseBullet
 		from astarnavigator import AStarNavigator
 		from Minions import TankMinion, ADCMinion, AoEMinion, StandardBullet, MeleeBullet, AoEBullet
-		class MyHumanMinion(MyMinion):
-			def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
-						 hitpoints=HITPOINTS,
-						 firerate=FIRERATE, bulletclass=SmallBullet):
-				MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-								  bulletclass)
-
-		class MyAlienMinion(MyMinion):
-			def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
-						 hitpoints=HITPOINTS * 2,
-						 firerate=FIRERATE, bulletclass=BaseBullet):
-				MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-								  bulletclass)
-
-		class MyEliteMinion(MyMinion):
-			def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
-						 hitpoints=HITPOINTS * 3,
-						 firerate=FIRERATE, bulletclass=BigBullet):
-				MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
-								  bulletclass)
+		#class MyHumanMinion(MyMinion):
+		#	def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360,
+		#				 hitpoints=HITPOINTS,
+		#				 firerate=FIRERATE, bulletclass=SmallBullet):
+		#		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+		#						  bulletclass)
+		#
+		#class MyAlienMinion(MyMinion):
+		#	def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360,
+		#				 hitpoints=HITPOINTS * 2,
+		#				 firerate=FIRERATE, bulletclass=BaseBullet):
+		#		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+		#						  bulletclass)
+		#
+		#class MyEliteMinion(MyMinion):
+		#	def __init__(self, position, orientation, world, image=ELITE, speed=SPEED, viewangle=360,
+		#				 hitpoints=HITPOINTS * 3,
+		#				 firerate=FIRERATE, bulletclass=BigBullet):
+		#		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
+		#						  bulletclass)
 
 		def cdf(weights):
 			total = sum(weights)
@@ -1258,9 +1267,13 @@ class GameWorld():
 			worlddim = self.getDimensions()
 			# print worlddim
 			worldx, worldy = worlddim
-			worldlines = [((0, 0), (worldx, 0)), ((worldx, 0), (worldx, worldy)), ((worldx, worldy), (0, worldy)),
-						  ((0, worldy), (0, 0))]
-			worldpoints = [(0, 0), (worldx, 0), (worldx, worldy), (0, worldy)]
+			#worldlines = [((0, 0), (worldx, 0)), ((worldx, 0), (worldx, worldy)), ((worldx, worldy), (0, worldy)),
+			#			  ((0, worldy), (0, 0))]
+			#worldpoints = [(0, 0), (worldx, 0), (worldx, worldy), (0, worldy)]
+			pc = 1 - PERCENTFIELD
+			worldlines = [((worldx*pc + OFFSET, OFFSET), (worldx - OFFSET, OFFSET)), ((worldx - OFFSET, OFFSET), (worldx - OFFSET, worldy - OFFSET)),\
+							((worldx - OFFSET, worldy - OFFSET), (worldx*pc + OFFSET, worldy - OFFSET)), ((worldx*pc + OFFSET, worldy - OFFSET), (worldx*pc + OFFSET, OFFSET))]
+			worldpoints = [(worldx*pc + OFFSET, OFFSET), (worldx - OFFSET, OFFSET), (worldx - OFFSET, worldy - OFFSET), (worldx*pc + OFFSET, worldy - OFFSET)]
 			while canProceed == False:
 				circle_x, circle_y = basept
 
@@ -1321,7 +1334,7 @@ class GameWorld():
 			print "TEAM 1: ", team1type1, team1type2, team1type3
 			print "TEAM 2: ", team2type1, team2type2, team2type3
 
-			if self.ai_gold < 300:
+			if self.gold[1] < 300:
 				return None
 
 			if (team1type3 - team2type3) >= 2:
@@ -1342,6 +1355,7 @@ class GameWorld():
 				return basetype
 			'''elif (team2bldgcount - team1bldgcount) > 5:
 				return None'''
+
 			randval = numpy.random.choice([0, 1, 2], 5, p=[0.5, 0.30, 0.20])
 			#randval = choice([0, 1, 2], [0.5, 0.3, 0.2])
 			print "RAND VAL: ",randval
@@ -1349,10 +1363,10 @@ class GameWorld():
 			'''
 			max = team1type1
 			basetype = 0
-			if team1type2 > max and self.ai_gold >= 500:
+			if team1type2 > max and self.gold[1] >= 500:
 				max = team1type2
 				basetype = 1
-			if team1type3 > max and self.ai_gold >= 700:
+			if team1type3 > max and self.gold[1] >= 700:
 				max = team1type3
 				basetype = 2
 			if max == 0:
@@ -1362,8 +1376,8 @@ class GameWorld():
 			return basetype'''
 		self.clock = self.clock + delta
 		self.worldCollisionTest()
-		self.my_gold += 1
-		self.ai_gold += 1
+		self.gold[0] += 1
+		self.gold[1] += 1
 		self.ai_lastbuilt -= 1
 		factories = [FACTORY1, FACTORY2, FACTORY3]
 		miniontypes = [ADCMinion, TankMinion, AoEMinion]
@@ -1382,10 +1396,10 @@ class GameWorld():
 					buildpt = findpt(BUILDRADIUS, basept)
 					self.lastBuilding = basetype
 					print "base type1: ",basetype
-					print "ai_gold1: ", self.ai_gold
+					print "ai_gold1: ", self.gold[1]
 					if basetype == None:
 						return None
-					if self.ai_gold < costarr[basetype]:
+					if self.gold[1] < costarr[basetype]:
 						return None
 					canProceed = True
 					whilecount = 0
@@ -1394,7 +1408,7 @@ class GameWorld():
 						if whilecount > 10:
 							return None
 						canProceed = True'''
-					c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
 					lins = c3.getLines()
 					bases = self.getCastlesAndBuildings()
 					linlist = []
@@ -1410,10 +1424,10 @@ class GameWorld():
 									#buildpt = findpt(BUILDRADIUS, basept)
 					if canProceed == False:
 						continue
-					c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
-					if self.ai_gold < costarr[basetype]:
+					#c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					if self.gold[1] < costarr[basetype]:
 						return None
-					self.ai_gold -= costarr[basetype]
+					self.gold[1] -= costarr[basetype]
 					# self.lines += lins
 					nav = AStarNavigator()
 					nav.agent = self.agent
@@ -1422,12 +1436,12 @@ class GameWorld():
 					#print "LINES: ", c3.getLines()
 					self.addBuilding(c3)
 					self.lastBuilding = None
-			elif self.ai_gold >= costarr[self.lastBuilding]:
+			elif self.gold[1] >= costarr[self.lastBuilding]:
 				basetype = self.lastBuilding
 				basepts = []
 				bases = self.getCastlesAndBuildingsForTeam(2)
 				print "base type: ", basetype
-				print "ai_gold: ", self.ai_gold
+				print "ai_gold: ", self.gold[1]
 				for bse in bases:
 					basepts.append(bse.getLocation())
 				for basept in basepts:
@@ -1446,7 +1460,7 @@ class GameWorld():
                         if whilecount > 10:
                             return None
                         canProceed = True'''
-					c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					c3 = Spawner(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
 					lins = c3.getLines()
 					bases = self.getCastlesAndBuildings()
 					linlist = []
@@ -1462,10 +1476,10 @@ class GameWorld():
 								# buildpt = findpt(BUILDRADIUS, basept)
 					if canProceed == False:
 						continue
-					c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
-					if self.ai_gold < costarr[basetype]:
+					#c3 = Building(factories[basetype], buildpt, self.agent.world, 2, miniontypes[basetype])
+					if self.gold[1] < costarr[basetype]:
 						return None
-					self.ai_gold -= costarr[basetype]
+					self.gold[1] -= costarr[basetype]
 					# self.lines += lins
 					nav = AStarNavigator()
 					nav.agent = self.agent
@@ -1475,7 +1489,7 @@ class GameWorld():
 					self.addBuilding(c3)
 					self.lastBuilding = None
 			else:
-				print "ai_gold: ", self.ai_gold
+				print "ai_gold: ", self.gold[1]
 				return None
 		return None
 
