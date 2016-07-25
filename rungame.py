@@ -29,6 +29,7 @@ from MyHero import *
 from clonenav import *
 from Castle import *
 from MyMinion import *
+from buildBehaviors import *
 ############################
 ### How to use this file
 ###
@@ -78,6 +79,9 @@ world.initializeTerrain(obstacles, (0, 0, 0), 4)
 agent.setNavigator(Navigator())
 agent.team = 0
 world.debugging = True
+useBehaviorTree = False
+if useBehaviorTree:
+	world.behaviorTree = BuildBehavior(world,2,6)
 
 nav = AStarNavigator()
 nav.agent = agent

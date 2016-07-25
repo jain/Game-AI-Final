@@ -889,6 +889,7 @@ class GameWorld():
 		self.font = pygame.font.Font(None,50)
 		self.lastBuilding = None
 		self.damagepts = [0, 0]
+		self.behaviorTree = None
 
 	def getPoints(self):
 		return self.points
@@ -1418,7 +1419,11 @@ class GameWorld():
 				bases = self.getCastlesAndBuildingsForTeam(2)
 				team1bases = self.getCastlesAndBuildingsForTeam(1)
 				team2bases = self.getCastlesAndBuildingsForTeam(2)
-				basetype = findBaseToBuild(team1bases, team2bases)
+				if self.behaviorTree is not None:
+					self.behaviorTree.update()
+					basetype = self.behaviorTree.basetype
+				else:
+					basetype = findBaseToBuild(team1bases, team2bases)
 				for bse in bases:
 					basepts.append(bse.getLocation())
 				for basept in basepts:
@@ -1491,7 +1496,10 @@ class GameWorld():
 					#print "LINES: ", c3.getLines()
 					self.addBuilding(c3)
 					self.lastBuilding = None
+					if self.behaviorTree is not None:
+						self.behaviorTree.basetype = None
 					print "BUILDING CONSTRUCTED: ", buildingtype[basetype]
+					return None
 			elif self.gold[1] >= costarr[self.lastBuilding]:
 				basetype = self.lastBuilding
 				basepts = []
@@ -1571,7 +1579,10 @@ class GameWorld():
 					# print "LINES: ", c3.getLines()
 					self.addBuilding(c3)
 					self.lastBuilding = None
+					if self.behaviorTree is not None:
+						self.behaviorTree.basetype = None
 					print "BUILDING CONSTRUCTED: ", buildingtype[basetype]
+					return None
 			else:
 				#print "ai_gold: ", self.gold[1]
 				return None
