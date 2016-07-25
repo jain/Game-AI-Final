@@ -28,9 +28,9 @@ from math import *
 ## BASEMINION'S CONSTANTS ##
 GROUPING_RANGE = 200
 ALIGNMENT_WEIGHT = 4
-COHESION_WEIGHT = 12
+COHESION_WEIGHT = 8
 SEPARATION_WEIGHT = 12
-INFLUENCE_PERCENT = 0.5
+INFLUENCE_PERCENT = 0.33
 
 ## MINION A'S CONSTANTS ##
 SPEED_A = (5, 5)
@@ -76,7 +76,7 @@ BULLETRANGE_D = 50
 
 class BaseMinion(Minion):
     def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
-                 firerate=FIRERATE, bulletclass=SmallBullet, attackorder = []):
+                 firerate=FIRERATE, bulletclass=SmallBullet, attackOrder = [], moveOrder = []):
         Minion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
         self.grouping_range = GROUPING_RANGE
         self.states = [Idle, Move, Attack]
@@ -84,7 +84,9 @@ class BaseMinion(Minion):
         self.position = position
         self.bullet = bulletclass
         self.bullet_range = bulletclass((0,0),0,None).range
-        self.attackorder = attackorder
+        self.attackOrder = attackOrder
+        self.moveOrder = moveOrder
+        self.focusTarget = None
 
     def start(self):
         Minion.start(self)
@@ -167,7 +169,7 @@ class BaseMinion(Minion):
                 #direction = numpy.add(normalizedDirection, self.getInfluenceVector())
                 #normalizedDirection = [x/vectorMagnitude(direction) for x in direction]
                 targetDistance = numpy.subtract(self.moveTarget, self.getLocation())
-                next = [m*n for m,n in zip(normalizedDirection,self.speed)]
+                next = [m*n*(1-INFLUENCE_PERCENT) for m,n in zip(normalizedDirection,self.speed)]
                 if all(abs(a) < abs(b) for a,b in zip(targetDistance, next)):
                     next = targetDistance
                 #normalizedDirection = [x/mag for x in direction]
@@ -189,6 +191,18 @@ class BaseMinion(Minion):
         visible = self.world.getVisible(self.getLocation(), self.orientation, self.viewangle)
         self.visible = visible
         return None
+    
+    def setFocusTarget(self, target):
+        self.focusTarget = target
+    
+    def getFocusTarget(self):
+        return self.focusTarget
+    
+    def setAttackOrder(self, order):
+        self.attackOrder = order
+    
+    def setMoveOrder(self, order):
+        self.moveOrder = order
 
 ############################
 
@@ -210,22 +224,44 @@ class Idle(State):
         State.execute(self, delta)
         agent = self.agent
         pos = agent.getLocation()
+        team = agent.getTeam()
         
-        # Following ATTACK_ORDER listing, look for nearby agents and attack closest, highest priority target
-        for type in agent.attackorder:
-            agents = sorted([(distance(x.getLocation(), pos), x) for x in agent.getVisibleType(type) if x.getTeam() != agent.getTeam() and withinRange(x.getLocation(), pos, agent.bullet_range)])
-            if len(agents) > 0:
-                agent.changeState(Attack, agents[0][1])
-        
-        # If no enemy is within range and enemy buildings are still alive, move towards the nearest one
-        bases = sorted([(distance(x.getLocation(), pos), x) for x in agent.world.getEnemyBuildings(agent.getTeam())])
-        if len(bases) > 0:
-            agent.changeState(Move, bases[0][1].getLocation())
-        
-        # If no enemy is within range and enemy castles are still alive, move towards the nearest one
-        bases = sorted([(distance(x.getLocation(), pos), x) for x in agent.world.getEnemyCastles(agent.getTeam())])
-        if len(bases) > 0:
-            agent.changeState(Move, bases[0][1].getLocation())
+        # Check if we have a focus target, and if so, try to attack or move toward them
+        if agent.getFocusTarget() is not None:
+            if withinRange(agent.getFocusTarget().getLocation(), pos, agent.bullet_range):
+                agent.changeState(Attack, agent.getFocusTarget())
+            else:
+                agent.changeState(Move, agent.getFocusTarget())
+        else:
+            # Following ATTACK_ORDER listing, look for nearby agents and attack closest, highest priority target
+            for type in agent.attackOrder:
+                agents = sorted([(distance(x.getLocation(), pos), x) for x in agent.getVisibleType(type) if x.getTeam() != team and withinRange(x.getLocation(), pos, agent.bullet_range)])
+                if len(agents) > 0:
+                    agent.changeState(Attack, agents[0][1])
+                    break
+            
+            ## If no enemy is within range and enemy buildings are still alive, move towards the nearest one
+            #bases = sorted([(distance(x.getLocation(), pos), x) for x in agent.world.getEnemyBuildings(agent.getTeam())])
+            #if len(bases) > 0:
+            #    self.target = bases[0][1]
+            #    agent.changeState(Move, self.target.getLocation())
+            #
+            ## If no enemy is within range and enemy castles are still alive, move towards the nearest one
+            #bases = sorted([(distance(x.getLocation(), pos), x) for x in agent.world.getEnemyCastles(agent.getTeam())])
+            #if len(bases) > 0:
+            #    self.target = bases[0][1]
+            #    agent.changeState(Move, self.target.getLocation())
+            
+            # Following MOVE_ORDER listing, look for nearby agents and attack closest, highest priority target
+            for type in agent.moveOrder:
+                # Fetch correct list
+                alltargets = agent.world.getEnemyNPCs(team) + agent.world.getEnemyBuildings(team) + agent.world.getEnemyCastles(team)
+                validtargets = [n for n in alltargets if isinstance(n, type)]
+                # If non-empty, find nearest object, set as target, and move towards it
+                if len(validtargets) > 0:
+                    ordered = sorted([(distance(x.getLocation(), pos), x) for x in validtargets])
+                    agent.changeState(Move, ordered[0][1])
+                    break
         
         # Else, do nothing
         return None
@@ -239,20 +275,26 @@ class Idle(State):
 ### Moves toward goal until it reaches something attackable and within range
 
 class Move(State):
-
+    
     def parseArgs(self, args):
-        # Set navigation to parsed location
-        self.agent.navigateTo(args[0])
+        self.target = args[0]
+        self.agent.navigateTo(self.target.getLocation())
     
     def execute(self, delta = 0):
         agent = self.agent
-        if agent.getMoveTarget() == None:
+        if self.target == None or self.target not in agent.getVisible() or agent.getMoveTarget() == None:
             agent.changeState(Idle)
-        # Following ATTACK_ORDER listing, look for nearby agents and attack closest, highest priority target
-        for type in agent.attackorder:
-            agents = sorted([(distance(x.getLocation(), agent.getLocation()), x) for x in agent.getVisibleType(type) if x.getTeam() != agent.getTeam() and withinRange(x.getLocation(), agent.getLocation(), agent.bullet_range)])
-            if len(agents) > 0:
-                agent.changeState(Attack, agents[0][1])
+        elif agent.getFocusTarget() is not None and self.target is not agent.getFocusTarget():
+            self.target = agent.getFocusTarget()
+        else:
+            if agent.getMoveTarget() is not self.target.getLocation():
+                agent.navigateTo(self.target.getLocation())
+            # Following ATTACK_ORDER listing, look for nearby agents and attack closest, highest priority target
+            for type in agent.attackOrder:
+                agents = sorted([(distance(x.getLocation(), agent.getLocation()), x) for x in agent.getVisibleType(type) if x.getTeam() != agent.getTeam() and withinRange(x.getLocation(), agent.getLocation(), agent.bullet_range)])
+                if len(agents) > 0:
+                    agent.changeState(Attack, agents[0][1])
+                    break
 
 ############################
 
@@ -280,8 +322,11 @@ class Attack(State):
         # If target is dead or out of range, switch back to idle
         else:
             agent.changeState(Idle)
+        # Check if we have a focus target, and if not our current victim, switch to idle for motion or attacking
+        if agent.getFocusTarget() is not None and self.victim is not agent.getFocusTarget():
+            agent.changeState(Idle)
         # If after shooting and target is not dead, but a higher priority target is nearby, switch targets
-        for type in agent.attackorder[:-1]:
+        for type in agent.attackOrder[:-1]:
             if isinstance(self.victim, type):
                 break
             else:
@@ -364,26 +409,27 @@ class AoEWave(AoEBullet):
 
 ############################
 
-ATTACKORDER_A = [Building, CastleBase]
+ORDER_A = [Building, CastleBase]
 
 class TankMinion(BaseMinion):
     def __init__(self, position, orientation, world, image=ELITE, speed=SPEED_B, viewangle=360, hitpoints=HITPOINTS_B,
-                 firerate=FIRERATE_B, bulletclass=MeleeBullet, attackorder = ATTACKORDER_A):
-        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackorder)
+                 firerate=FIRERATE_B, bulletclass=MeleeBullet, attackOrder = ORDER_A, moveOrder = ORDER_A):
+        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackOrder, moveOrder)
 
-ATTACKORDER_B = [TankMinion, BaseMinion, Building, CastleBase]
+ORDER_B = [TankMinion, BaseMinion, Building, CastleBase]
+ORDER_C = [BaseMinion, Building, CastleBase]
 
 class ADCMinion(BaseMinion):
     def __init__(self, position, orientation, world, image=NPC, speed=SPEED_A, viewangle=360, hitpoints=HITPOINTS_A,
-                 firerate=FIRERATE_A, bulletclass=StandardBullet, attackorder = ATTACKORDER_B):
-        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackorder)
+                 firerate=FIRERATE_A, bulletclass=StandardBullet, attackOrder = ORDER_B, moveOrder = ORDER_B):
+        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackOrder, moveOrder)
 
 class AoEMinion(BaseMinion):
     def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED_C, viewangle=360, hitpoints=HITPOINTS_C,
-                 firerate=FIRERATE_C, bulletclass=AoEBullet, attackorder = ATTACKORDER_B):
-        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackorder)
+                 firerate=FIRERATE_C, bulletclass=AoEBullet, attackOrder = ORDER_B, moveOrder = ORDER_B):
+        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackOrder, moveOrder)
 
 class AoEWarrior(BaseMinion):
     def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED_D, viewangle=360, hitpoints=HITPOINTS_D,
-                 firerate=FIRERATE_D, bulletclass=AoEWave, attackorder = ATTACKORDER_B):
-        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackorder)
+                 firerate=FIRERATE_D, bulletclass=AoEWave, attackOrder = ORDER_B, moveOrder = ORDER_C):
+        BaseMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, attackOrder, moveOrder)
