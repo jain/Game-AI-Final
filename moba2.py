@@ -26,7 +26,8 @@ from agents import *
 from astarnavigator import *
 from clonenav import *
 from Castle import *
-
+from Minions import TankMinion, ADCMinion, AoEMinion
+from BaseMinion import *
 
 ### Modifications:
 ### - Hero can dodge
@@ -86,15 +87,17 @@ class MOBABullet(Bullet):
 		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			self.hit(thing)
 
+
 	def hit(self, thing):
 		ret = Bullet.hit(self, thing)
 		if isinstance(thing, MOBAAgent) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			#Already dished damage to another agent, so just keep track of who did the damage
 			thing.lastDamagedBy = self.owner
+
 			ret = True
 			# Should the agent get some score? Heros score by shooting Heros
 			self.world.damageCaused(self.owner, thing, self.damage)
-		elif isinstance(thing, Base) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
+		if isinstance(thing, Base) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			thing.damage(self.damage)
 			ret = True
 		elif isinstance(thing, Tower) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
@@ -102,7 +105,7 @@ class MOBABullet(Bullet):
 			ret = True
 		elif isinstance(thing, Building) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			thing.damage(self.damage)
-			return True
+			ret = True
 		elif isinstance(thing, CastleBase) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			thing.damage(self.damage)
 			return True
@@ -701,7 +704,6 @@ class MOBAWorld(GatedWorld):
 	def damageCaused(self, damager, damagee, amount):
 		if isinstance(damager, Hero) and isinstance(damagee, Hero):
 			self.addToScore(damager.getTeam(), amount)
-
 
 	def addToScore(self, team, amount):
 		if team is not None:

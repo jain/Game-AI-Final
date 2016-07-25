@@ -204,15 +204,33 @@ class Bullet(Mover):
 
 	### Hit verifies that it has hit something hitable and what it should do (e.g., cause damage) 
 	def hit(self, thing):
+
 		if thing != self.owner and isinstance(thing, Agent) and (thing.getTeam() == None or thing.getTeam() != self.owner.getTeam()):
 			thing.damage(self.damage)
+			self.damageCaused(self.owner, thing, self.damage)
 			return True
 		elif isinstance(thing, Obstacle) or isinstance(thing, Gate) or self.position[0] < 0 or self.position[0] > self.world.dimensions[0] or self.position[1] < 0 or self.position[1] > self.world.dimensions[1]:
 			return True
 		else:
 			return False
 
+	def damageCaused(self, damager, damagee, amount):
+		from Minions import TankMinion, ADCMinion, AoEMinion
+		from BaseMinion import *
+		#print "DAMAGE CAUSED"
+		if isinstance(damager, Agent) and isinstance(damagee, ADCMinion) and damagee.isAlive() == False:
+			self.addToGold(damager.getTeam(), ADCMINION_KILL)
+		if isinstance(damager, Agent) and isinstance(damagee, TankMinion) and damagee.isAlive() == False:
+			self.addToGold(damager.getTeam(), TANKMINION_KILL)
+		if isinstance(damager, Agent) and isinstance(damagee, AoEMinion) and damagee.isAlive() == False:
+			self.addToGold(damager.getTeam(), AOEMINION_KILL)
 
+	def addToGold(self, team, amount):
+		#print "ADD GOLD"
+		if team == 1:
+			self.world.my_gold += amount
+		elif team == 2:
+			self.world.ai_gold += amount
 				
 				
 
@@ -1324,7 +1342,6 @@ class GameWorld():
 				return basetype
 			'''elif (team2bldgcount - team1bldgcount) > 5:
 				return None'''
-
 			randval = numpy.random.choice([0, 1, 2], 5, p=[0.5, 0.30, 0.20])
 			#randval = choice([0, 1, 2], [0.5, 0.3, 0.2])
 			print "RAND VAL: ",randval
