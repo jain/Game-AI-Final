@@ -1,7 +1,7 @@
 import json
 import random
 from Castle import AttackBooster, GoldMiner, Defense, Spawner
-from Minions import TankMinion, AoEWarrior, ADCMinion
+from Minions import TankMinion, AoEMinion, ADCMinion
 import numpy
 '''import itertools
 
@@ -21,7 +21,7 @@ for key, val in rlDict.iteritems():
 '''
 
 BUILDTYPES = [AttackBooster, GoldMiner, Defense, Spawner]
-MINIONTYPES = [TankMinion, AoEWarrior, ADCMinion]
+MINIONTYPES = [TankMinion, AoEMinion, ADCMinion]
 
 class RLCsv():
     def __init__(self):

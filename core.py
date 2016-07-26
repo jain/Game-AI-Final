@@ -997,7 +997,7 @@ class GameWorld():
 			o.draw(self.background)
 
 		while True:
-			clock.tick(TICK)
+			#clock.tick(TICK)
 			delta = clock.get_rawtime()
 			self.handleEvents()
 			self.update(delta)

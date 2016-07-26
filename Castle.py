@@ -269,18 +269,12 @@ class Building(Mover):
 class Spawner(Building):
 	def __init__(self, image, position, world, team=None, minionType=Minion, buildrate=BUILDRATE, hitpoints=SPAWNERHITPOINTS):
 		Building.__init__(self, image, position, world, team, hitpoints)
-		from Minions import TankMinion, ADCMinion
 		self.buildTimer = buildrate
 		self.buildRate = buildrate
 		self.minionType = minionType
 		self.numSpawned = 0
 		self.buildingType = "Spawner"
-		if minionType == TankMinion:
-			self.type = 'tank'
-		elif minionType == ADCMinion:
-			self.type = 'adc'
-		else:
-			self.type = 'aoe'
+	
 	### Spawn an agent.
 	### type: name of agent class. Must be RTSAgent or subclass thereof
 	### angle: specifies where around the base the agent will be spawned
