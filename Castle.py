@@ -4,7 +4,7 @@ from pygame.locals import *
 
 from constants import *
 from utils import *
-#from core import *
+from core import *
 from agents import *
 from astarnavigator import *
 from clonenav import *
