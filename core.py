@@ -886,11 +886,14 @@ class GameWorld():
 		# unobstructed places
 		self.destinations = {}
 		self.gold = [1000, 1000]
-		self.ai_lastbuilt = 5
 		self.font = pygame.font.Font(None,50)
-		self.lastBuilding = None
 		self.damagepts = [0, 0]
+<<<<<<< HEAD
 		self.rl = RLCsv()
+=======
+		self.p1 = None
+		self.p2 = None
+>>>>>>> d7c7cd109d58d902de56df0431b03237dd5b2fef
 
 	def getPoints(self):
 		return self.points
@@ -1064,6 +1067,7 @@ class GameWorld():
 
 
 	def doKeyDown(self, key):
+<<<<<<< HEAD
 		if key == 32: #space
 			self.agent.shoot()
 		elif key == 100: #d
@@ -1156,6 +1160,16 @@ class GameWorld():
 			self.lines = self.lines + o.getLines()
 			self.obstacles.append(o)
 			'''
+=======
+		#if key == 32: #space
+		#	self.agent.shoot()
+		#elif key == 100: #d
+		#	print "distance traveled", self.agent.distanceTraveled
+		if self.p1 is not None:
+			self.p1.doKeyDown(key)
+		if self.p2 is not None:
+			self.p2.doKeyDown(key)
+>>>>>>> d7c7cd109d58d902de56df0431b03237dd5b2fef
 
 	def worldCollisionTest(self):
 		collisions = []
@@ -1186,6 +1200,7 @@ class GameWorld():
 			c[1].collision(c[0])
 
 	def update(self, delta):
+<<<<<<< HEAD
 
 		print "AI GOLD: ", self.gold[1]
 		print "DAMAGE DONE BY AI",
@@ -1391,10 +1406,16 @@ class GameWorld():
 			#randval = choice([0, 1, 2], [0.5, 0.3, 0.2])
 			print "RAND VAL: ",randval
 			return randval[3]
+=======
+		#print "AI GOLD: ", self.gold[1]
+		#print "DAMAGE DONE BY AI", self.damagepts[0]
+		
+>>>>>>> d7c7cd109d58d902de56df0431b03237dd5b2fef
 		self.clock = self.clock + delta
 		self.worldCollisionTest()
 		self.gold[0] += 1
 		self.gold[1] += 1
+<<<<<<< HEAD
 		self.ai_lastbuilt -= 1
 		if self.gold[1] < 600:
 			return None
@@ -1633,10 +1654,14 @@ class GameWorld():
 				#print "ai_gold: ", self.gold[1]
 				return None'''
 
+=======
+		if self.p1 is not None:
+			self.p1.update(delta)
+		if self.p2 is not None:
+			self.p2.update(delta)
+>>>>>>> d7c7cd109d58d902de56df0431b03237dd5b2fef
 		return None
-
-
-
+	
 	def collision(self, thing):
 		return None
 		
@@ -1737,6 +1762,18 @@ class GameWorld():
 
 	def getBullets(self):
 		return self.bullets
+	
+	def setP1(self, p1):
+		self.p1 = p1
+	
+	def setP2(self, p2):
+		self.p2 = p2
+	
+	def getAllyAI(self, team):
+		if self.p1.getTeam() == team:
+			return self.p1
+		else:
+			return self.p2
 
 ############################
 ### GATE

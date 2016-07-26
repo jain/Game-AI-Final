@@ -28,8 +28,9 @@ from moba2 import *
 from MyHero import *
 from clonenav import *
 from Castle import *
-from MyMinion import *
+from AI import *
 from buildBehaviors import *
+
 ############################
 ### How to use this file
 ###
@@ -55,40 +56,25 @@ mirror = map(lambda poly: map(lambda point: (dims[0]-point[0], dims[1]-point[1])
 obstacles = obstacles + mirror
 
 ########################
-
-
-
-
-class MyHumanMinion(MyMinion):
-	def __init__(self, position, orientation, world, image=NPC, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
-				 firerate=FIRERATE, bulletclass=SmallBullet):
-		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
-
-
-class MyAlienMinion(MyMinion):
-	def __init__(self, position, orientation, world, image=JACKAL, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
-				 firerate=FIRERATE, bulletclass=SmallBullet):
-		MyMinion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
-
-########################
 world = MOBAWorld(SEED, dims, dims, 0, 60)
-agent = GhostAgent(ELITE, (x/4, y/2), 0, SPEED, world)
+p1 = BaseAI(world, 1)
+p1.behaviorTree = BuildBehavior(world,1,10)
+p2 = BaseAI(world, 2)
+p2.behaviorTree = BuildBehavior(world,2,1)
+world.setP1(p1)
+world.setP2(p2)
+agent = GhostAgent(ELITE, (x/2, y), 0, SPEED, world)
 #agent = Hero((600, 500), 0, world, ELITE)
 world.setPlayerAgent(agent)
 world.initializeTerrain(obstacles, (0, 0, 0), 4)
 agent.setNavigator(Navigator())
 agent.team = 0
 world.debugging = True
-useBehaviorTree = False
-if useBehaviorTree:
-	world.behaviorTree = BuildBehavior(world,2,6)
 
 nav = AStarNavigator()
 nav.agent = agent
 nav.setWorld(world)
 
-#c1 = Castle(BASE, (75,360),world,1, MyHumanMinion)
-#c2 = Castle(BASE, (1280-75,360),world,2, MyAlienMinion)
 c1 = CastleBase(BASE, (180,y/2),world,1)
 c2 = CastleBase(BASE, (x-180,y/2),world,2)
 world.addCastle(c1)

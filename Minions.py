@@ -86,7 +86,7 @@ class BaseMinion(Minion):
         self.bullet_range = bulletclass((0,0),0,None).range
         self.attackOrder = attackOrder
         self.moveOrder = moveOrder
-        self.focusTarget = None
+        #self.focusTarget = None
 
     def start(self):
         Minion.start(self)
@@ -192,11 +192,12 @@ class BaseMinion(Minion):
         self.visible = visible
         return None
     
-    def setFocusTarget(self, target):
-        self.focusTarget = target
-    
+    #def setFocusTarget(self, target):
+    #    self.focusTarget = target
+    #
     def getFocusTarget(self):
-        return self.focusTarget
+    #    return self.focusTarget
+        return self.world.getAllyAI(self.team).getFocusTarget()
     
     def setAttackOrder(self, order):
         self.attackOrder = order
@@ -225,13 +226,14 @@ class Idle(State):
         agent = self.agent
         pos = agent.getLocation()
         team = agent.getTeam()
+        focusTarget = agent.getFocusTarget()
         
         # Check if we have a focus target, and if so, try to attack or move toward them
-        if agent.getFocusTarget() is not None:
-            if withinRange(agent.getFocusTarget().getLocation(), pos, agent.bullet_range):
-                agent.changeState(Attack, agent.getFocusTarget())
+        if focusTarget is not None:
+            if focusTarget.getTeam() != team and withinRange(focusTarget.getLocation(), pos, agent.bullet_range):
+                agent.changeState(Attack, focusTarget)
             else:
-                agent.changeState(Move, agent.getFocusTarget())
+                agent.changeState(Move, focusTarget)
         else:
             # Following ATTACK_ORDER listing, look for nearby agents and attack closest, highest priority target
             for type in agent.attackOrder:
@@ -239,18 +241,6 @@ class Idle(State):
                 if len(agents) > 0:
                     agent.changeState(Attack, agents[0][1])
                     break
-            
-            ## If no enemy is within range and enemy buildings are still alive, move towards the nearest one
-            #bases = sorted([(distance(x.getLocation(), pos), x) for x in agent.world.getEnemyBuildings(agent.getTeam())])
-            #if len(bases) > 0:
-            #    self.target = bases[0][1]
-            #    agent.changeState(Move, self.target.getLocation())
-            #
-            ## If no enemy is within range and enemy castles are still alive, move towards the nearest one
-            #bases = sorted([(distance(x.getLocation(), pos), x) for x in agent.world.getEnemyCastles(agent.getTeam())])
-            #if len(bases) > 0:
-            #    self.target = bases[0][1]
-            #    agent.changeState(Move, self.target.getLocation())
             
             # Following MOVE_ORDER listing, look for nearby agents and attack closest, highest priority target
             for type in agent.moveOrder:
@@ -282,10 +272,17 @@ class Move(State):
     
     def execute(self, delta = 0):
         agent = self.agent
-        if self.target == None or self.target not in agent.getVisible() or agent.getMoveTarget() == None:
+        focusTarget = agent.getFocusTarget()
+        
+        if focusTarget is not None:
+            if self.target is not focusTarget:
+                self.target = focusTarget
+            if agent.getMoveTarget() is not self.target.getLocation():
+                agent.navigateTo(self.target.getLocation())
+            if focusTarget.getTeam() != agent.getTeam() and withinRange(focusTarget.getLocation(), pos, agent.bullet_range):
+                agent.changeState(Attack, focusTarget)
+        elif self.target == None or self.target not in agent.world.getEverything() or agent.getMoveTarget() == None or self.target.getTeam() == agent.getTeam():
             agent.changeState(Idle)
-        elif agent.getFocusTarget() is not None and self.target is not agent.getFocusTarget():
-            self.target = agent.getFocusTarget()
         else:
             if agent.getMoveTarget() is not self.target.getLocation():
                 agent.navigateTo(self.target.getLocation())
@@ -315,15 +312,17 @@ class Attack(State):
 
     def execute(self, delta = 0):
         agent = self.agent
+        
+        # Check if we have a focus target, and if not our current victim, switch to idle for motion or attacking
+        if agent.getFocusTarget() is not None and self.victim is not agent.getFocusTarget():
+            agent.changeState(Idle)
+        
         # Check that victim exists and is not already dead or now out of range
         if self.victim is not None and self.victim in agent.getVisible() and withinRange(agent.getLocation(), self.victim.getLocation(), agent.bullet_range):
             agent.turnToFace(self.victim.getLocation())
             agent.shoot()
         # If target is dead or out of range, switch back to idle
         else:
-            agent.changeState(Idle)
-        # Check if we have a focus target, and if not our current victim, switch to idle for motion or attacking
-        if agent.getFocusTarget() is not None and self.victim is not agent.getFocusTarget():
             agent.changeState(Idle)
         # If after shooting and target is not dead, but a higher priority target is nearby, switch targets
         for type in agent.attackOrder[:-1]:

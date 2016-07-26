@@ -610,6 +610,9 @@ class MOBAWorld(GatedWorld):
 			if t.getTeam() != myteam:
 				castleandbuilding.append(t)
 		return castleandbuilding
+	
+	def getEverything(self):
+		return self.getCastlesAndBuildings() + self.getNPCs()
 
 ###########################################
 
