@@ -28,7 +28,7 @@ class BaseAI():
 		self.buildTimer = 0
 		self.buildRate = buildRate
 		self.buildings = [FACTORY1, FACTORY2, FACTORY3, TOWER, MINE, RESOURCE]
-		self.costs = [300, 500, 700, 500, 500, 500]
+		self.costs = [300, 500, 700, 500, 600, 700]
 		self.factories = [FACTORY1, FACTORY2, FACTORY3]
 		self.minionTypes = [ADCMinion, TankMinion, AoEMinion]
 		self.lastBuild = None

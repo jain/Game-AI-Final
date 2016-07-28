@@ -29,35 +29,35 @@ from math import *
 GROUPING_RANGE = 200
 ALIGNMENT_WEIGHT = 4
 COHESION_WEIGHT = 8
-SEPARATION_WEIGHT = 12
-INFLUENCE_PERCENT = 0.33
+SEPARATION_WEIGHT = 16
+INFLUENCE_PERCENT = 0.5
 
 ## MINION A'S CONSTANTS ##
 SPEED_A = (5, 5)
-HITPOINTS_A = 25
+HITPOINTS_A = 40
 FIRERATE_A = 10
 BULLET_A = "sprites/bullet.gif"
 BULLETSPEED_A = (20, 20)
-BULLETDAMAGE_A = 1
+BULLETDAMAGE_A = 3
 BULLETRANGE_A = 150
 
 ## MINION B'S CONSTANTS ##
 SPEED_B = (3, 3)
-HITPOINTS_B = 100
+HITPOINTS_B = 120
 FIRERATE_B = 20
 BULLET_B = "sprites/bullet.gif"
 BULLETSPEED_B = (20, 20)
-BULLETDAMAGE_B = 3
-BULLETRANGE_B = 25
+BULLETDAMAGE_B = 5
+BULLETRANGE_B = 35
 
 ## MINION C'S CONSTANTS ##
-SPEED_C = (5, 5)
-HITPOINTS_C = 15
+SPEED_C = (4, 4)
+HITPOINTS_C = 25
 FIRERATE_C = 80
 BULLET_C = "sprites/bullet2.gif"
 BULLETSPEED_C = (15, 15)
-BULLETDAMAGE_C = 5
-BULLETRANGE_C = 250
+BULLETDAMAGE_C = 10
+BULLETRANGE_C = 200
 AREAEFFECTRANGE_C = 50
 
 ## MINION D'S CONSTANTS ##
@@ -145,7 +145,7 @@ class BaseMinion(Minion):
         v = numpy.add(v, numpy.multiply(s, SEPARATION_WEIGHT))
         # Normalize if able and return the vector
         v = numpy.divide(v, ALIGNMENT_WEIGHT + COHESION_WEIGHT + SEPARATION_WEIGHT)
-        v = [m*n*INFLUENCE_PERCENT for m,n in zip(v, self.speed)]
+        #v = [m*n*INFLUENCE_PERCENT for m,n in zip(v, self.speed)]
         return v
 
     def update(self, delta):
@@ -169,12 +169,14 @@ class BaseMinion(Minion):
                 #direction = numpy.add(normalizedDirection, self.getInfluenceVector())
                 #normalizedDirection = [x/vectorMagnitude(direction) for x in direction]
                 targetDistance = numpy.subtract(self.moveTarget, self.getLocation())
-                next = [m*n*(1-INFLUENCE_PERCENT) for m,n in zip(normalizedDirection,self.speed)]
+                normalizedDirection = numpy.multiply(normalizedDirection, 1-INFLUENCE_PERCENT)
+                normalizedDirection = numpy.add(normalizedDirection, self.getInfluenceVector())
+                next = [m*n for m,n in zip(normalizedDirection,self.speed)]
                 if all(abs(a) < abs(b) for a,b in zip(targetDistance, next)):
                     next = targetDistance
                 #normalizedDirection = [x/mag for x in direction]
                 #next = [m*n for m,n in zip(normalizedDirection,self.speed)]
-                next = numpy.add(next, self.getInfluenceVector())
+                #next = numpy.add(next, self.getInfluenceVector())
                 self.distanceTraveled = self.distanceTraveled + distance((0,0), next)
                 self.move(next)
                 self.navigator.update(delta)
