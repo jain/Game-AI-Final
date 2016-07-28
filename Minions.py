@@ -27,10 +27,10 @@ from math import *
 
 ## BASEMINION'S CONSTANTS ##
 GROUPING_RANGE = 200
-ALIGNMENT_WEIGHT = 4
-COHESION_WEIGHT = 8
-SEPARATION_WEIGHT = 16
-INFLUENCE_PERCENT = 0.5
+ALIGNMENT_WEIGHT = 1
+COHESION_WEIGHT = 3
+SEPARATION_WEIGHT = 3
+INFLUENCE_PERCENT = 0.33
 
 ## MINION A'S CONSTANTS ##
 SPEED_A = (5, 5)
@@ -122,7 +122,7 @@ class BaseMinion(Minion):
         # For each ally, add the translational difference between them and self to offset
         for ally in nearby:
             dropoff = 1 - distance(ally.getLocation(), self.getLocation())/self.grouping_range
-            v = numpy.multiply(numpy.add(v, numpy.subtract(ally.getLocation(), self.getLocation())), dropoff)
+            v = numpy.add(v, numpy.multiply(numpy.subtract(ally.getLocation(), self.getLocation()), dropoff))
         # Divide total offset by number of agents nearby
         v = numpy.divide(v, len(nearby))
         #v = numpy.subtract(v, self.getLocation())
