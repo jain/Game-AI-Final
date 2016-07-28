@@ -1010,6 +1010,31 @@ class GameWorld():
 			self.drawWorld()
 			pygame.display.flip()
 
+	def runCompetition(self,maxticks=1000,gui=False):
+		self.sprites = pygame.sprite.RenderPlain()
+		for m in self.movers:
+			self.sprites.add(m)
+		
+		for i in range(maxticks):
+			self.handleEvents()
+			self.worldCollisionTest()
+			self.gold[0] += 1
+			self.gold[1] += 1
+			self.p1.update(0)
+			self.p2.update(0)
+			self.sprites.update(0)
+			if gui:
+				self.drawWorld()
+				pygame.display.flip()
+			if len(self.castles)==1:
+				print 'Winner: Team',self.castles[0].getTeam()
+				return self.castles[0].getTeam()
+
+		#resolve draw with damage done
+		winner = 1 if self.damagepts[0] > self.damagepts[1] else 2
+		print 'Winner: Team',winner,'(',self.damagepts[0],'vs',self.damagepts[1],')'
+		return winner
+
 	def drawWorld(self):
 		#self.screen.blit(self.background, (0, 0))
 		offsetX = 0 #self.camera[0] #- self.agent.rect.center[0]
