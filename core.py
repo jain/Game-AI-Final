@@ -183,10 +183,15 @@ class Bullet(Mover):
 	def getDamage(self):
 		from Castle import AttackBooster
 		x = self.damage
-		boosters = [n for n in self.world.getBuildingsForTeam(self.owner.getTeam()) if isinstance(n, AttackBooster)]
+		myBuildings = self.world.getBuildingsForTeam(self.owner.getTeam())
+		enemyBuildings = self.world.getEnemyBuildings(self.owner.getTeam()) 
+		boosters = [n for n in myBuildings if isinstance(n, AttackBooster)]
 		for booster in boosters:
 			x = booster.boostAttack(x)
-		return x
+		# Scale damage based on building ratio; 0.5x to 2x power depending on how well or poorly the user is doing
+		ratio = (len(myBuildings) + 5) / (len(enemyBuildings) + 5)
+		clamped_ratio = max(min(ratio, 2.0), 0.5)
+		return x/clamped_ratio
 	
 	### Update the agent every tick. Primarily does movement
 	def update(self, delta):
