@@ -1,9 +1,12 @@
+#implements AI behavior tree
 
 import random
 import math
 from behaviortree import *
 from Minions import TankMinion, ADCMinion, AoEMinion, AoEWarrior
 
+#daemon for checking the current number of buildings against a threshold
+#arguments are building type and threshold value
 class CheckNumBuilding(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
@@ -30,6 +33,8 @@ class CheckNumBuilding(BTNode):
 		elif self.buildingType == 6:
 			return self.agent.team1bldgcount < self.buildingThreshold
 
+#daemon for checking the enemy number of buildings against a threshold
+#arguments are building type and threshold value
 class CheckEnemyBuilding(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
@@ -56,6 +61,8 @@ class CheckEnemyBuilding(BTNode):
 		elif self.buildingType == 6:
 			return self.agent.team2bldgcount > self.buildingThreshold
 
+#daemon for comparing the current number of buildings vs. enemy
+#arguments are building type
 class CompareNumBuilding(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
@@ -79,6 +86,8 @@ class CompareNumBuilding(BTNode):
 		elif self.buildingType == 6:
 			return self.agent.team1bldgcount < self.agent.team2bldgcount
 
+#daemon for checking the current number of buildings using fuzzy logic
+#arguments are building type
 class FuzzyCheck(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
@@ -102,6 +111,8 @@ class FuzzyCheck(BTNode):
 		elif self.buildingType == 6:
 			return self.agent.team1bldgcount < math.log(random.random())/math.log(0.5)
 
+#daemon for randomizing execution of child nodes
+#arguments are probability for execution
 class Randomize(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
@@ -112,6 +123,8 @@ class Randomize(BTNode):
 		ret = BTNode.execute(self, delta)
 		return random.random() < self.chance
 
+#node for building factories
+#arguments are factory type
 class BuildFactory(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
@@ -128,6 +141,7 @@ class BuildFactory(BTNode):
 		else:
 			return None
 
+#node for building towers
 class BuildTower(BTNode):
 	def execute(self, delta = 0):
 		ret = BTNode.execute(self, delta)
@@ -139,6 +153,7 @@ class BuildTower(BTNode):
 		else:
 			return None
 
+#node for building mines
 class BuildMine(BTNode):
 	def execute(self, delta = 0):
 		ret = BTNode.execute(self, delta)
@@ -150,6 +165,7 @@ class BuildMine(BTNode):
 		else:
 			return None
 
+#node for building attack boosters
 class BuildBooster(BTNode):
 	def execute(self, delta = 0):
 		ret = BTNode.execute(self, delta)
@@ -186,6 +202,7 @@ treeSpec[10] = [Selector, [Sequence, (Randomize,0.5), (BuildFactory,0)], [Sequen
 #use fuzzy logic
 treeSpec[11] = [Selector, [Sequence, (FuzzyCheck,4), BuildMine], [Sequence, (FuzzyCheck,3), BuildTower], (BuildFactory,0)]
 
+#superclass for determining build order based on behavior tree
 class BuildBehavior(BehaviorTree):
 
 	def __init__(self,world,teamId,behaviourId):
@@ -213,6 +230,7 @@ class BuildBehavior(BehaviorTree):
 		self.buildTree(treeSpec[behaviourId])
 		BehaviorTree.start(self)
 
+	#count number of each type of building
 	def update(self):
 		self.gold = self.world.gold[self.teamId-1]
 		miniontypes = [ADCMinion, TankMinion, AoEWarrior]

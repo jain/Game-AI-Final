@@ -34,9 +34,8 @@ from buildBehaviors import *
 ############################
 ### How to use this file
 ###
-### Use this file to conduct a competition with other agents.
-### Step 1: Give your MyHero class an unique name, e.g., MarkHero. Change the file name to match the class name exactly.
-### Step 2: python runherocompetition.py classname1 classname2
+### Use this file to simulate games between different behavior trees.
+### Command: python runAICompetition.py
 
 ############################
 ### SET UP WORLD
