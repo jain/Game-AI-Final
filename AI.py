@@ -40,6 +40,11 @@ class BaseAI():
 		return self.team
 
 	def update(self, delta):
+		# Check if base is dead; if so, victory goes to opponent
+		if len(self.world.getCastleForTeam(self.team)) == 0:
+			print "Team", 3 - self.team, "wins!"
+			self.world.gameover = True
+		
 		alltargets = self.world.getEverything()
 		if self.focusTarget is not None and self.focusTarget not in alltargets:
 			self.focusTarget = None
@@ -141,6 +146,11 @@ class Human(BaseAI):
 		BaseAI.__init__(self, world, team)
 	
 	def update(self, delta):
+		# Check if base is dead; if so, victory goes to opponent
+		if len(self.world.getCastleForTeam(self.team)) == 0:
+			print "Team", 3 - self.team, "wins!"
+			self.world.gameover = True
+		
 		alltargets = self.world.getCastlesAndBuildings() + self.world.getNPCsForTeam(self.team) + self.world.getEnemyNPCs(self.team)
 		if self.focusTarget is not None and self.focusTarget not in alltargets:
 			self.focusTarget = None

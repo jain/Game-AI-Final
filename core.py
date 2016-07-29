@@ -894,6 +894,7 @@ class GameWorld():
 		self.damagepts = [0, 0]
 		self.p1 = None
 		self.p2 = None
+		self.gameover = False
 
 	def getPoints(self):
 		return self.points
@@ -989,19 +990,19 @@ class GameWorld():
 
 	def run(self):
 		self.sprites = pygame.sprite.RenderPlain((self.agent))
-#		for r in self.resources:
-#			self.sprites.add(r)
-#		for n in self.npcs:
-#			self.sprites.add(n)
+		#		for r in self.resources:
+		#			self.sprites.add(r)
+		#		for n in self.npcs:
+		#			self.sprites.add(n)
 		for m in self.movers:
 			self.sprites.add(m)
 		clock = pygame.time.Clock()
-
+		
 		# Draw obstacles. Only need to do this once
 		for o in self.obstacles:
 			o.draw(self.background)
-
-		while True:
+		
+		while not self.gameover:
 			#clock.tick(TICK)
 			delta = clock.get_rawtime()
 			self.handleEvents()
