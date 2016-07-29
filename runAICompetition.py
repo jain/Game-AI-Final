@@ -40,6 +40,7 @@ from buildBehaviors import *
 ############################
 ### SET UP WORLD
 import os
+#disable graphics
 os.environ['SDL_VIDEODRIVER']='dummy'
 
 x = 1400
@@ -48,7 +49,10 @@ dims = (x, y)
 
 
 ########################
+
+#keep track of score
 score = [0]* 12
+#pick two numbers between 0 and 11
 for i in range(12):
 	for j in range(i+1,12):
 		print 'Behavior',i,'vs','behavior',j
@@ -68,6 +72,7 @@ for i in range(12):
 		world.addCastle(c1)
 		world.addCastle(c2)
 
+		#determine winner and add 1 to its score
 		winner = world.runCompetition(500,False)
 		if winner == 1:
 			score[i] += 1

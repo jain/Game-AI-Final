@@ -16,6 +16,10 @@
  * limitations under the License.
 '''
 
+'''
+This file implements the BaseMinion class and a Finite State Machine for the Minion AI
+'''
+
 import sys, pygame, math, numpy, random, time, copy
 from pygame.locals import *
 
