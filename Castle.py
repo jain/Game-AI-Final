@@ -338,8 +338,8 @@ class Defense(Building):
 			minions = []
 			heros = []
 			for npc in self.world.npcs + [self.world.agent]:
-				if npc.getTeam() == None or npc.getTeam() != self.getTeam() and distance(self.getLocation(),
-																						 npc.getLocation()) < BASEBULLETRANGE:
+				if npc.getTeam() == None or npc.getTeam() != self.getTeam() and\
+						distance(self.getLocation(), npc.getLocation()) < BASEBULLETRANGE:
 					hit = rayTraceWorld(self.getLocation(), npc.getLocation(), self.world.getLines())
 					if hit == None:
 						if isinstance(npc, Minion):

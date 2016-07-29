@@ -276,6 +276,7 @@ class Move(State):
         agent = self.agent
         focusTarget = agent.getFocusTarget()
         
+        # Check if we have a focus target, and if so, try to attack or move toward them
         if focusTarget is not None:
             if self.target is not focusTarget:
                 self.target = focusTarget
@@ -283,9 +284,11 @@ class Move(State):
                 agent.navigateTo(self.target.getLocation())
             if focusTarget.getTeam() != agent.getTeam() and withinRange(focusTarget.getLocation(), pos, agent.bullet_range):
                 agent.changeState(Attack, focusTarget)
+        # If we do not have a focus target but our current target does not exist or is on our side, switch to Idle
         elif self.target == None or self.target not in agent.world.getEverything() or agent.getMoveTarget() == None or self.target.getTeam() == agent.getTeam():
             agent.changeState(Idle)
         else:
+            # If target's position has changed, update the navigator
             if agent.getMoveTarget() is not self.target.getLocation():
                 agent.navigateTo(self.target.getLocation())
             # Following ATTACK_ORDER listing, look for nearby agents and attack closest, highest priority target

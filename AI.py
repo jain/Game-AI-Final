@@ -31,7 +31,7 @@ class BaseAI():
 		self.costs = [300, 500, 700, 500, 600, 700]
 		self.factories = [FACTORY1, FACTORY2, FACTORY3]
 		self.minionTypes = [ADCMinion, TankMinion, AoEMinion]
-		self.lastBuild = None
+		#self.lastBuild = None
 		self.behaviorTree = None
 		self.focusTarget = None
 		self.rl = RLCsv()
@@ -44,58 +44,12 @@ class BaseAI():
 		if self.focusTarget is not None and self.focusTarget not in alltargets:
 			self.focusTarget = None
 		self.buildTimer += 1
+		# Check if we should build
 		if self.buildTimer >= self.buildRate:
 			self.buildTimer = 0
 			myKingdom = self.world.getCastlesAndBuildingsForTeam(self.team)
-			#if self.lastBuild is not None and self.world.gold[self.team - 1] < self.costs[self.lastBuild]:
-			#	return None
-			#else:
-			#	if self.lastBuild == None:
-			#		myBuildings = self.world.getBuildingsForTeam(self.team)
-			#		enemyBuildings = self.world.getEnemyBuildings(self.team)
-			#		if self.behaviorTree is not None:
-			#			self.behaviorTree.update()
-			#			basetype = self.behaviorTree.basetype
-			#		else:
-			#			#basetype = self.nextToBuild(myBuildings, enemyBuildings)
-			#			basetype = self.rl.query(myBuildings, enemyBuildings, self.world.gold[self.team - 1], self.world.gold[1 - (self.team - 1)])
-			#		self.lastBuild = basetype
-			#	else:
-			#		basetype = self.lastBuild
-			#
-			#	if basetype == None:
-			#		return None
-			#	if self.world.gold[self.team - 1] < self.costs[basetype]:
-			#		return None
-			#
-			#	for basept in [base.getLocation() for base in myKingdom]:
-			#		buildpt = self.findPoint(basept, BUILDRADIUS)
-			#		print buildpt
-			#		if basetype >= 0 and basetype <=2:
-			#			c3 = Spawner(self.factories[basetype], buildpt, self.world, self.team, self.minionTypes[basetype])
-			#		elif basetype == 3:
-			#			c3 = Defense(TOWER, buildpt, self.world, self.team)
-			#		elif basetype == 4:
-			#			c3 = GoldMiner(MINE, buildpt, self.world, self.team)
-			#		elif basetype == 5:
-			#			c3 = AttackBooster(RESOURCE, buildpt, self.world, self.team)
-			#
-			#		if not self.isValidBuildLocation(c3, myKingdom):
-			#			continue
-			#
-			#		if self.world.gold[self.team - 1] < self.costs[basetype]:
-			#			return None
-			#		self.world.gold[self.team - 1] -= self.costs[basetype]
-			#		nav = AStarNavigator()
-			#		nav.agent = self.world.agent
-			#		nav.setWorld(self.world)
-			#		c3.setNavigator(nav)
-			#		self.world.addBuilding(c3)
-			#		self.lastBuild = None
-			#		if self.behaviorTree is not None:
-			#			self.behaviorTree.basetype = None
-			#		print "BUILDING CONSTRUCTED: ", self.buildings[basetype]
 			
+			# If we have a behaviorTree set, base our AI on the behavior tree; otherwise, use reinforcement learning
 			if self.behaviorTree is not None:
 				self.behaviorTree.update()
 				basetype = self.behaviorTree.basetype
@@ -103,12 +57,14 @@ class BaseAI():
 				myBuildings = self.world.getBuildingsForTeam(self.team)
 				enemyBuildings = self.world.getEnemyBuildings(self.team)
 				basetype = self.rl.query(myBuildings, enemyBuildings, self.world.gold[self.team - 1], self.world.gold[1 - (self.team - 1)])
-		
+			
+			# Terminate early if the basetype is none or if we do not have the gold to build our next structure
 			if basetype == None:
 				return None
 			if self.world.gold[self.team - 1] < self.costs[basetype]:
 				return None
 			
+			# Find a location for the build
 			for basept in [base.getLocation() for base in myKingdom]:
 				buildpt = self.findPoint(basept, BUILDRADIUS)
 				if basetype >= 0 and basetype <=2:
@@ -120,11 +76,10 @@ class BaseAI():
 				elif basetype == 5:
 					c3 = AttackBooster(RESOURCE, buildpt, self.world, self.team)
 				
+				# If build point is not valid, jump to next loop
 				if not self.isValidBuildLocation(c3, myKingdom):
 					continue
 				
-				#if self.world.gold[self.team - 1] < self.costs[basetype]:
-				#	return None
 				self.world.gold[self.team - 1] -= self.costs[basetype]
 				nav = AStarNavigator()
 				nav.agent = self.world.agent
@@ -133,18 +88,20 @@ class BaseAI():
 				self.world.addBuilding(c3)
 				if self.behaviorTree is not None:
 					self.behaviorTree.basetype = None
-				#print "BUILDING CONSTRUCTED: ", self.buildings[basetype]
 				break
 		return None
 	
+	# Finds a point within a given radius of a central point and within the realm of the team field
 	def findPoint(self, basept, radius):
 		wx, wy = self.world.getDimensions()
+		# Set search boundaries based on which side/team we are on
 		if self.team == 1:
 			boundarypoints = [(0, 0), (wx*PERCENTFIELD, 0), (wx*PERCENTFIELD, wy), (0, wy)]
 		else:
 			boundarypoints = [(wx*(1 - PERCENTFIELD), 0), (wx, 0), (wx, wy), (wx*(1 - PERCENTFIELD), wy)]
 		boundarylines = [(boundarypoints[x%4], boundarypoints[(x+1)%4]) for x in xrange(4)]
 		count = 0
+		# Repeat generation of points until we find a valid one to return
 		while True:
 			x = basept[0] + random.random()*2*radius - radius
 			y = basept[1] + random.random()*2*radius - radius
@@ -152,64 +109,6 @@ class BaseAI():
 				dist = [minimumDistance(line, (x, y)) for line in boundarylines]
 				if min(dist) >= OFFSET and pointInsidePolygonPoints((x,y), boundarypoints):
 					return (x,y)
-	
-	#def nextToBuild(self, myBases, enemyBases):
-	#	myBldgCount = 0
-	#	mySpawners = [0, 0, 0]
-	#	myDefenses = 0
-	#	myAttackBoosts = 0
-	#	myGoldMines = 0
-	#	
-	#	enemyBldgCount = 0
-	#	enemySpawners = [0, 0, 0]
-	#	enemyDefenses = 0
-	#	enemyAttackBoosts = 0
-	#	enemyGoldMines = 0
-	#	
-	#	for bldg in myBases:
-	#		myBldgCount += 1
-	#		if isinstance(bldg, Spawner):
-	#			mySpawners[self.minionTypes.index(bldg.minionType)] += 1
-	#		elif isinstance(bldg, Defense):
-	#			myDefenses += 1
-	#		elif isinstance(bldg, AttackBooster):
-	#			myAttackBoosts += 1
-	#		elif isinstance(bldg, GoldMiner):
-	#			myGoldMines += 1
-	#	
-	#	for bldg in enemyBases:
-	#		enemyBldgCount += 1
-	#		if isinstance(bldg, Spawner):
-	#			enemySpawners[self.minionTypes.index(bldg.minionType)] += 1
-	#		elif isinstance(bldg, Defense):
-	#			enemyDefenses += 1
-	#		elif isinstance(bldg, AttackBooster):
-	#			enemyAttackBoosts += 1
-	#		elif isinstance(bldg, GoldMiner):
-	#			enemyGoldMines += 1
-	#	
-	#	#print "TEAM 1: ", team1spawners, team1tower, team1goldbldg, team1attack
-	#	#print "TEAM 2: ", team2spawners, team2type3, team2tower, team2goldbldg, team2attack
-	#	
-	#	if self.world.gold[self.team - 1] < min(self.costs):
-	#		return None
-	#	
-	#	if (myBldgCount <= 3 and myDefenses == 0) or myBldgCount % 3 > myDefenses:
-	#		basetype = 3
-	#		return basetype
-	#	
-	#	if (enemySpawners[2] - mySpawners[2]) >= 2:
-	#		basetype = 2
-	#		return basetype
-	#	
-	#	if abs(myBldgCount - enemyBldgCount) >= 5:
-	#		basetype = 1
-	#		return basetype
-	#	
-	#	randval = numpy.random.choice([0, 1, 2, 3, 4, 5], 5, p=[0.3, 0.15, 0.1, 0.2, 0.1, 0.15])
-	#	#randval = choice([0, 1, 2], [0.5, 0.3, 0.2])
-	#	#print "RAND VAL: ",randval
-	#	return randval[3]
 	
 	def isValidBuildLocation(self, newbuild, kingdom):
 		newlines = newbuild.getLines()
@@ -307,10 +206,6 @@ class Human(BaseAI):
 			castles = self.world.getCastleForTeam(self.team)
 			if len(castles) > 0:
 				self.focusTarget = castles[0]
-				#for agent in self.world.getNPCsForTeam(self.team):
-				#	agent.setFocusTarget(castles[0])
 		elif key==97:
 			self.focusTarget = None
-			#for agent in self.world.getNPCsForTeam(self.team):
-			#	agent.setFocusTarget(None)
 		return None
