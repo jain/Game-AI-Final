@@ -27,7 +27,6 @@ from astarnavigator import *
 from clonenav import *
 from Castle import *
 from Minions import TankMinion, ADCMinion, AoEMinion
-from BaseMinion import *
 
 ### Modifications:
 ### - Hero can dodge
