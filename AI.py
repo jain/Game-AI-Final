@@ -62,12 +62,12 @@ class BaseAI():
 			#		self.lastBuild = basetype
 			#	else:
 			#		basetype = self.lastBuild
-			#	
+			#
 			#	if basetype == None:
 			#		return None
 			#	if self.world.gold[self.team - 1] < self.costs[basetype]:
 			#		return None
-			#	
+			#
 			#	for basept in [base.getLocation() for base in myKingdom]:
 			#		buildpt = self.findPoint(basept, BUILDRADIUS)
 			#		print buildpt
@@ -79,10 +79,10 @@ class BaseAI():
 			#			c3 = GoldMiner(MINE, buildpt, self.world, self.team)
 			#		elif basetype == 5:
 			#			c3 = AttackBooster(RESOURCE, buildpt, self.world, self.team)
-			#		
+			#
 			#		if not self.isValidBuildLocation(c3, myKingdom):
 			#			continue
-			#		
+			#
 			#		if self.world.gold[self.team - 1] < self.costs[basetype]:
 			#			return None
 			#		self.world.gold[self.team - 1] -= self.costs[basetype]
